@@ -4,18 +4,20 @@ import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.*
 import com.serchinastico.lintools.LinDetector
 import org.jetbrains.uast.*
+import java.util.*
 
 
-class NoDataFrameworksFromAndroidClass : LinDetector(), Detector.UastScanner {
+class NoDataFrameworksFromAndroidClassDetector : LinDetector(), Detector.UastScanner {
 
     companion object {
-        private val DETECTOR_CLASS = NoDataFrameworksFromAndroidClass::class.java
+        private val DETECTOR_CLASS = NoDataFrameworksFromAndroidClassDetector::class.java
         private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
         private val IMPLEMENTATION = Implementation(DETECTOR_CLASS, DETECTOR_SCOPE)
-        private const val ISSUE_ID = "NoSwitchAllowed"
-        private const val ISSUE_DESCRIPTION = "Avoid Using Switch statements"
+        private const val ISSUE_ID = "NoDataFrameworksFromAndroidClass"
+        private const val ISSUE_DESCRIPTION =
+            "Framework classes to get or store data should never be called from Activities, Fragments or any other Android related view."
         private const val ISSUE_EXPLANATION =
-            "Kony compiler doesn't fully work with switch statements so they should be replaced by if-else-if statements."
+            "Framework classes to get or store data should never be called from Activities, Fragments or any other Android related view."
         private val ISSUE_CATEGORY = Category.INTEROPERABILITY
         private const val ISSUE_PRIORITY = 5
         private val ISSUE_SEVERITY = Severity.ERROR
@@ -25,13 +27,13 @@ class NoDataFrameworksFromAndroidClass : LinDetector(), Detector.UastScanner {
         )
     }
 
-    override fun getApplicableUastTypes(): List<Class<out UElement>>? {
-        return listOf(UImportStatement::class.java)
-    }
+    override fun getApplicableFiles(): EnumSet<Scope> = DETECTOR_SCOPE
 
-    override fun createUastHandler(context: JavaContext): UElementHandler? {
-        return LinElementHandler(context)
-    }
+    override fun getApplicableUastTypes(): List<Class<out UElement>>? =
+        listOf(UImportStatement::class.java)
+
+    override fun createUastHandler(context: JavaContext): UElementHandler? =
+        LinElementHandler(context)
 
     private class LinElementHandler(private val context: JavaContext) : UElementHandler() {
         override fun visitImportStatement(node: UImportStatement) {
@@ -59,8 +61,10 @@ private val UTypeReferenceExpression.isAndroidFrameworkType: Boolean
     } ?: false
 
 private val UImportStatement.isFrameworkLibraryImport: Boolean
-    get() = asRenderString().let { name ->
-        listOf(
+    get() {
+        val importedPackageName = importReference?.asRenderString() ?: return false
+
+        return listOf(
             "com.squareup.retrofit",
             "com.squareup.retrofit2",
             "com.squareup.okhttp",
@@ -71,7 +75,7 @@ private val UImportStatement.isFrameworkLibraryImport: Boolean
             "android.content.SharedPreferences",
             "android.database",
             "java.net"
-        ).any { name.startsWith(it) }
+        ).any { importedPackageName.startsWith(it) }
     }
 
 val UElement.classesInSameFile: List<UClass>
