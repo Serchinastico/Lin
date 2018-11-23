@@ -17,7 +17,7 @@ class NoDataFrameworksFromAndroidClassDetector : LinDetector(), Detector.UastSca
         private const val ISSUE_DESCRIPTION =
             "Framework classes to get or store data should never be called from Activities, Fragments or any other Android related view."
         private const val ISSUE_EXPLANATION =
-            "Framework classes to get or store data should never be called from Activities, Fragments or any other Android related view."
+            "Your Android classes should not be responsible for retrieving or storing information, that should be responsibility of another classes."
         private val ISSUE_CATEGORY = Category.INTEROPERABILITY
         private const val ISSUE_PRIORITY = 5
         private val ISSUE_SEVERITY = Severity.ERROR
