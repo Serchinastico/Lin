@@ -2,12 +2,11 @@ package com.serchinastico.rules
 
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.*
-import com.serchinastico.lintools.LinDetector
 import org.jetbrains.uast.*
 import java.util.*
 
 
-class NoDataFrameworksFromAndroidClassDetector : LinDetector(), Detector.UastScanner {
+class NoDataFrameworksFromAndroidClassDetector : Detector(), Detector.UastScanner {
 
     companion object {
         private val DETECTOR_CLASS = NoDataFrameworksFromAndroidClassDetector::class.java
