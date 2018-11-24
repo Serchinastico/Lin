@@ -2,23 +2,21 @@ package com.serchinastico.rules
 
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.*
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
-import org.jetbrains.uast.UImportStatement
 import java.util.*
 
-
-class NoDataFrameworksFromAndroidClassDetector : Detector(), Detector.UastScanner {
-
+class NoPrintStackTraceCallsDetector : Detector(), Detector.UastScanner {
     companion object {
-        private val DETECTOR_CLASS = NoDataFrameworksFromAndroidClassDetector::class.java
+        private val DETECTOR_CLASS = NoPrintStackTraceCallsDetector::class.java
         private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
         private val IMPLEMENTATION = Implementation(DETECTOR_CLASS, DETECTOR_SCOPE)
-        private const val ISSUE_ID = "NoDataFrameworksFromAndroidClass"
+        private const val ISSUE_ID = "NoPrintStackTraceCalls"
         private const val ISSUE_DESCRIPTION =
-            "Framework classes to get or store data should never be called from Activities, Fragments or any other Android related view."
+            "There should not be calls to the printStackTrace method in Throwable instances"
         private const val ISSUE_EXPLANATION =
-            "Your Android classes should not be responsible for retrieving or storing information, that should be responsibility of another classes."
-        private val ISSUE_CATEGORY = Category.INTEROPERABILITY
+            "Errors should be logged with a configured logger or sent to the backend for faster response"
+        private val ISSUE_CATEGORY = Category.CORRECTNESS
         private const val ISSUE_PRIORITY = 5
         private val ISSUE_SEVERITY = Severity.ERROR
         val ISSUE = Issue.create(
@@ -30,22 +28,19 @@ class NoDataFrameworksFromAndroidClassDetector : Detector(), Detector.UastScanne
     override fun getApplicableFiles(): EnumSet<Scope> = DETECTOR_SCOPE
 
     override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-        listOf(UImportStatement::class.java)
+        listOf(UCallExpression::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler? =
         LinElementHandler(context)
 
     private class LinElementHandler(private val context: JavaContext) : UElementHandler() {
-        override fun visitImportStatement(node: UImportStatement) {
-            if (!node.isFrameworkLibraryImport) {
-                return
-            }
+        override fun visitCallExpression(node: UCallExpression) {
+            val receiverType = node.receiverType ?: return
 
-            val fileContainsActivityClass = node.classesInSameFile
-                .flatMap { it.uastSuperTypes }
-                .any { it.isAndroidFrameworkType }
+            val isReceiverChildOfThrowable = receiverType.isAnyOf("java.lang.Throwable", "kotlin.Throwable")
+            val isMethodPrintStackTrace = node.methodIdentifier?.name == "printStackTrace"
 
-            if (fileContainsActivityClass) {
+            if (isReceiverChildOfThrowable && isMethodPrintStackTrace) {
                 context.report(ISSUE, Location.create(context.file), ISSUE.getBriefDescription(TextFormat.TEXT))
             }
         }
