@@ -1,0 +1,21 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(":dsl")
+
+    compileOnly 'com.android.tools.lint:lint:26.2.1'
+    compileOnly 'com.android.tools.lint:lint-api:26.2.1'
+    compileOnly 'com.android.tools.lint:lint-checks:26.2.1'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.assertj:assertj-core:3.3.0'
+    testCompile 'org.mockito:mockito-core:2.23.0'
+    testCompile 'com.android.tools.lint:lint:26.2.1'
+    testCompile 'com.android.tools.lint:lint-tests:26.2.1'
+    testCompile 'com.android.tools:testutils:26.2.1'
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
