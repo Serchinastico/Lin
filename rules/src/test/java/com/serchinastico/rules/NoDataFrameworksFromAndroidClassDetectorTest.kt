@@ -20,11 +20,7 @@ class NoDataFrameworksFromAndroidClassDetectorTest {
             )
             .issues(NoDataFrameworksFromAndroidClassDetector.ISSUE)
             .run()
-            .expect(
-                """
-                    |No warnings.
-                """.trimMargin()
-            )
+            .expectClean()
     }
 
     @Test
@@ -45,11 +41,7 @@ class NoDataFrameworksFromAndroidClassDetectorTest {
             )
             .issues(NoDataFrameworksFromAndroidClassDetector.ISSUE)
             .run()
-            .expect(
-                """
-                    |No warnings.
-                """.trimMargin()
-            )
+            .expectClean()
     }
 
     @Test
@@ -93,11 +85,7 @@ class NoDataFrameworksFromAndroidClassDetectorTest {
             )
             .issues(NoDataFrameworksFromAndroidClassDetector.ISSUE)
             .run()
-            .expect(
-                """
-                    |No warnings.
-                """.trimMargin()
-            )
+            .expectClean()
     }
 
     @Test
@@ -118,11 +106,7 @@ class NoDataFrameworksFromAndroidClassDetectorTest {
             )
             .issues(NoDataFrameworksFromAndroidClassDetector.ISSUE)
             .run()
-            .expect(
-                """
-                    |No warnings.
-                """.trimMargin()
-            )
+            .expectClean()
     }
 
     @Test

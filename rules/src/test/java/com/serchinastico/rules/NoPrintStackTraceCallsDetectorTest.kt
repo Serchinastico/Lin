@@ -26,11 +26,7 @@ class NoPrintStackTraceCallsDetectorTest {
             )
             .issues(NoPrintStackTraceCallsDetector.ISSUE)
             .run()
-            .expect(
-                """
-                    |No warnings.
-                """.trimMargin()
-            )
+            .expectClean()
     }
 
     @Test
@@ -105,11 +101,7 @@ class NoPrintStackTraceCallsDetectorTest {
             )
             .issues(NoPrintStackTraceCallsDetector.ISSUE)
             .run()
-            .expect(
-                """
-                    |No warnings.
-                """.trimMargin()
-            )
+            .expectClean()
     }
 
     @Test

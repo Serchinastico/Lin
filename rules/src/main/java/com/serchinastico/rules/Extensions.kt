@@ -1,13 +1,44 @@
 package com.serchinastico.rules
 
+import com.intellij.lang.Language
 import com.intellij.psi.PsiType
 import org.jetbrains.uast.*
+import org.jetbrains.uast.kotlin.KotlinUClass
+
+val UField.isPrivate: Boolean
+    get() {
+        when {
+            language.isJava -> return visibility == UastVisibility.PRIVATE
+            language.isKotlin -> {
+                val parent = (uastParent ?: return false) as? KotlinUClass ?: return false
+
+                val propertyAccessorName = "get${name.capitalize()}"
+                return parent.methods
+                    .filter { it.name == propertyAccessorName }
+                    .filter { it.parameters.isEmpty() }
+                    .filter { it.returnType == type }
+                    .any { it.visibility == UastVisibility.PRIVATE }
+            }
+            else -> return false
+        }
+    }
+
+val Language.isKotlin: Boolean
+    get() = this == Language.findLanguageByID("kotlin")
+val Language.isJava: Boolean
+    get() = this == Language.findLanguageByID("JAVA")
+
+fun UVariable.isClassOrSubclassOf(vararg fullyQualifiedNames: String): Boolean =
+    allIsATypes.any { type -> fullyQualifiedNames.asList().any { type.canonicalText == it } }
+
+fun PsiType.isClassOrSubclassOf(vararg fullyQualifiedNames: String): Boolean =
+    allIsATypes.any { type -> fullyQualifiedNames.asList().any { type.canonicalText == it } }
+
+val UVariable.allIsATypes: List<PsiType>
+    get() = typeReference?.type?.allIsATypes ?: type.allIsATypes
 
 val PsiType.allIsATypes: List<PsiType>
     get() = superTypes.asList() + this
-
-fun PsiType.isAnyOf(vararg fullyQualifiedNames: String): Boolean =
-    allIsATypes.any { type -> fullyQualifiedNames.asList().any { type.canonicalText == it } }
 
 val UTypeReferenceExpression.isAndroidFrameworkType: Boolean
     get() = getQualifiedName()?.let { name ->

@@ -1,5 +1,7 @@
 package com.serchinastico.lin
 
-import android.app.Activity
+import android.view.View
 
-class TestActivity : Activity()
+class TestClass {
+    public val view: View = View(null)
+}
