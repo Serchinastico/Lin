@@ -1,103 +1,72 @@
 package com.serchinastico.rules
 
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest.java
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kotlin
-import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
+import com.serchinastico.rules.test.LintTest
+import com.serchinastico.rules.test.LintTest.Expectation.NoErrors
+import com.serchinastico.rules.test.LintTest.Expectation.SomeError
 import org.junit.Test
 
-class NoPublicViewPropertiesDetectorTest {
+class NoPublicViewPropertiesDetectorTest : LintTest {
+
+    override val issue = NoPublicViewPropertiesDetector.ISSUE
+
     @Test
     fun inJavaClass_whenViewFieldIsPrivate_detectsNoErrors() {
-        lint()
-            .files(
-                java(
-                    """
-                        |package foo;
-                        |
-                        |import android.view.View;
-                        |
-                        |class TestClass {
-                        |   private View view;
-                        |}
-                    """.trimMargin()
-                )
-            )
-            .issues(NoPublicViewPropertiesDetector.ISSUE)
-            .run()
-            .expectClean()
+        expect(
+            """
+                |package foo;
+                |
+                |import android.view.View;
+                |
+                |class TestClass {
+                |   private View view;
+                |}
+            """.trimMargin()
+        ).inJava toHave NoErrors
     }
 
     @Test
     fun inJavaClass_whenViewFieldIsNonPrivate_detectsErrors() {
-        lint()
-            .files(
-                java(
-                    """
-                        |package foo;
-                        |
-                        |import android.view.View;
-                        |
-                        |class TestClass {
-                        |   View view;
-                        |}
-                    """.trimMargin()
-                )
-            )
-            .issues(NoPublicViewPropertiesDetector.ISSUE)
-            .run()
-            .expect(
-                """
-                    |src/foo/TestClass.java: Error: View properties should always be private [NoPublicViewProperties]
-                    |1 errors, 0 warnings
-                """.trimMargin()
-            )
+        expect(
+            """
+                |package foo;
+                |
+                |import android.view.View;
+                |
+                |class TestClass {
+                |   View view;
+                |}
+            """.trimMargin()
+        ).inJava toHave SomeError
     }
 
 
     @Test
     fun inKotlinClass_whenViewFieldIsPrivate_detectsNoErrors() {
-        lint()
-            .files(
-                kotlin(
-                    """
-                        |package foo
-                        |
-                        |import android.view.View
-                        |
-                        |class TestClass {
-                        |   private val view: View = View()
-                        |}
-                    """.trimMargin()
-                )
-            )
-            .issues(NoPublicViewPropertiesDetector.ISSUE)
-            .run()
-            .expectClean()
+        expect(
+            """
+                |package foo
+                |
+                |import android.view.View
+                |
+                |class TestClass {
+                |   private val view: View = View()
+                |}
+            """.trimMargin()
+        ).inKotlin toHave NoErrors
     }
 
     @Test
     fun inKotlinClass_whenViewFieldIsNotPrivate_detectsErrors() {
-        lint()
-            .files(
-                kotlin(
-                    """
-                        |package foo
-                        |
-                        |import android.view.View
-                        |
-                        |class TestClass {
-                        |   public val view: android.view.View = android.view.View(null)
-                        |}
-                    """.trimMargin()
-                )
-            )
-            .issues(NoPublicViewPropertiesDetector.ISSUE)
-            .run()
-            .expect(
-                """
-                    |src/foo/TestClass.kt: Error: View properties should always be private [NoPublicViewProperties]
-                    |1 errors, 0 warnings
-                """.trimMargin()
-            )
+        expect(
+            """
+                |package foo
+                |
+                |import android.view.View
+                |
+                |class TestClass {
+                |   public val view: View = View(null)
+                |}
+            """.trimMargin()
+        ).inKotlin toHave SomeError
     }
 }

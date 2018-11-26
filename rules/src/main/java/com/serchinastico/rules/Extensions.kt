@@ -5,6 +5,8 @@ import com.intellij.psi.PsiType
 import org.jetbrains.uast.*
 import org.jetbrains.uast.kotlin.KotlinUClass
 
+val Any?.exhaustive get() = Unit
+
 val UField.isPrivate: Boolean
     get() {
         when {
@@ -13,11 +15,13 @@ val UField.isPrivate: Boolean
                 val parent = (uastParent ?: return false) as? KotlinUClass ?: return false
 
                 val propertyAccessorName = "get${name.capitalize()}"
-                return parent.methods
+                val propertyAccessor = parent.methods
                     .filter { it.name == propertyAccessorName }
                     .filter { it.parameters.isEmpty() }
-                    .filter { it.returnType == type }
-                    .any { it.visibility == UastVisibility.PRIVATE }
+                    .firstOrNull { it.returnType == type }
+
+                val accessor: UDeclaration = propertyAccessor ?: this
+                return accessor.visibility == UastVisibility.PRIVATE
             }
             else -> return false
         }
