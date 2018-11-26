@@ -2,20 +2,21 @@ package com.serchinastico.rules
 
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.*
-import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UField
 import java.util.*
 
-class NoPrintStackTraceCallsDetector : Detector(), Detector.UastScanner {
+class NoPublicViewPropertiesDetector : Detector(), Detector.UastScanner {
+
     companion object {
-        private val DETECTOR_CLASS = NoPrintStackTraceCallsDetector::class.java
+        private val DETECTOR_CLASS = NoPublicViewPropertiesDetector::class.java
         private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
         private val IMPLEMENTATION = Implementation(DETECTOR_CLASS, DETECTOR_SCOPE)
-        private const val ISSUE_ID = "NoPrintStackTraceCalls"
+        private const val ISSUE_ID = "NoPublicViewProperties"
         private const val ISSUE_DESCRIPTION =
-            "There should not be calls to the printStackTrace method in Throwable instances"
+            "View properties should always be private"
         private const val ISSUE_EXPLANATION =
-            "Errors should be logged with a configured logger or sent to the backend for faster response"
+            "Exposing views to other classes, be it from activities or custom views is leaking too much information to other classes and is prompt to break if the inner implementation of the layout changes, the only exception is if those views are part of an implemented interface/superclass"
         private val ISSUE_CATEGORY = Category.CORRECTNESS
         private const val ISSUE_PRIORITY = 5
         private val ISSUE_SEVERITY = Severity.ERROR
@@ -28,19 +29,17 @@ class NoPrintStackTraceCallsDetector : Detector(), Detector.UastScanner {
     override fun getApplicableFiles(): EnumSet<Scope> = DETECTOR_SCOPE
 
     override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-        listOf(UCallExpression::class.java)
+        listOf(UField::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler? =
         LinElementHandler(context)
 
     private class LinElementHandler(private val context: JavaContext) : UElementHandler() {
-        override fun visitCallExpression(node: UCallExpression) {
-            val receiverType = node.receiverType ?: return
+        override fun visitField(node: UField) {
+            val isPrivateField = node.isPrivate
+            val isViewType = node.isClassOrSubclassOf("android.view.View")
 
-            val isReceiverChildOfThrowable = receiverType.isClassOrSubclassOf("java.lang.Throwable", "kotlin.Throwable")
-            val isMethodPrintStackTrace = node.methodIdentifier?.name == "printStackTrace"
-
-            if (isReceiverChildOfThrowable && isMethodPrintStackTrace) {
+            if (!isPrivateField && isViewType) {
                 context.report(ISSUE, Location.create(context.file), ISSUE.getBriefDescription(TextFormat.TEXT))
             }
         }
