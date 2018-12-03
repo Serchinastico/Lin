@@ -7,16 +7,16 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.USwitchExpression
 import java.util.*
 
-class NoElseInSwitchWithEnumDetector : Detector(), Detector.UastScanner {
+class NoElseInSwitchWithEnumOrSealedDetector : Detector(), Detector.UastScanner {
     companion object {
-        private val DETECTOR_CLASS = NoElseInSwitchWithEnumDetector::class.java
+        private val DETECTOR_CLASS = NoElseInSwitchWithEnumOrSealedDetector::class.java
         private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
         private val IMPLEMENTATION = Implementation(DETECTOR_CLASS, DETECTOR_SCOPE)
         private const val ISSUE_ID = "NoElseInSwitchWithEnum"
         private const val ISSUE_DESCRIPTION =
-            "There should not be else/default branches on a switch statement checking for enum values"
+            "There should not be else/default branches on a switch statement checking for enum/sealed class values"
         private const val ISSUE_EXPLANATION =
-            "Adding an else/default branch breaks extensibility because it won't let you know if there is a missing implementation when adding new types to the enum"
+            "Adding an else/default branch breaks extensibility because it won't let you know if there is a missing implementation when adding new types to the enum/sealed class"
         private val ISSUE_CATEGORY = Category.CORRECTNESS
         private const val ISSUE_PRIORITY = 5
         private val ISSUE_SEVERITY = Severity.ERROR
@@ -38,7 +38,7 @@ class NoElseInSwitchWithEnumDetector : Detector(), Detector.UastScanner {
         override fun visitSwitchExpression(node: USwitchExpression) {
             val classReferenceType = node.expression?.getExpressionType() ?: return
 
-            if (!classReferenceType.isEnum) {
+            if (!classReferenceType.isEnum && !classReferenceType.isSealed) {
                 return
             }
 

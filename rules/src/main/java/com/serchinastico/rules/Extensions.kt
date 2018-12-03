@@ -4,6 +4,8 @@ import com.intellij.lang.Language
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiImmediateClassType
+import org.jetbrains.kotlin.asJava.classes.KtLightClass
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.uast.*
 import org.jetbrains.uast.java.JavaUDefaultCaseExpression
 import org.jetbrains.uast.kotlin.KotlinUClass
@@ -15,6 +17,18 @@ val USwitchExpression.clauses: List<USwitchClauseExpression>
 
 val USwitchClauseExpression.isElseBranch: Boolean
     get() = caseValues.isEmpty() || caseValues.any { it is JavaUDefaultCaseExpression }
+
+val PsiType.isSealed: Boolean
+    get() = when (this) {
+        is PsiClassReferenceType -> {
+            val resolvedType = resolve()
+            when (resolvedType) {
+                is KtLightClass -> (resolvedType.kotlinOrigin as? KtClass)?.isSealed() ?: false
+                else -> false
+            }
+        }
+        else -> false
+    }
 
 val PsiType.isEnum: Boolean
     get() = when (this) {

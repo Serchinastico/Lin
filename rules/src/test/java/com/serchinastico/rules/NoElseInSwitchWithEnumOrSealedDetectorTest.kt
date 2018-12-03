@@ -5,9 +5,9 @@ import com.serchinastico.rules.test.LintTest.Expectation.NoErrors
 import com.serchinastico.rules.test.LintTest.Expectation.SomeError
 import org.junit.Test
 
-class NoElseInSwitchWithEnumDetectorTest : LintTest {
+class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
 
-    override val issue = NoElseInSwitchWithEnumDetector.ISSUE
+    override val issue = NoElseInSwitchWithEnumOrSealedDetector.ISSUE
 
     @Test
     fun inJavaSwitchStatement_whenAllCasesAreCovered_detectsNoErrors() {
@@ -87,7 +87,7 @@ class NoElseInSwitchWithEnumDetectorTest : LintTest {
     }
 
     @Test
-    fun inKotlinSwitchStatement_whenAllCasesAreCovered_detectsNoErrors() {
+    fun inKotlinWhenStatement_whenAllCasesAreCovered_detectsNoErrors() {
         expect(
             """
                 |package foo
@@ -113,7 +113,7 @@ class NoElseInSwitchWithEnumDetectorTest : LintTest {
     }
 
     @Test
-    fun inKotlinSwitchStatement_whenElseIsUsed_detectsErrors() {
+    fun inKotlinWhenStatement_whenElseIsUsed_detectsErrors() {
         expect(
             """
                 |package foo
@@ -140,7 +140,7 @@ class NoElseInSwitchWithEnumDetectorTest : LintTest {
 
 
     @Test
-    fun inKotlinSwitchStatement_whenWhenArgumentIsFunctionParameter_detectsErrors() {
+    fun inKotlinWhenExpression_whenWhenArgumentIsFunctionParameter_detectsErrors() {
         expect(
             """
                 |package foo
@@ -156,6 +156,33 @@ class NoElseInSwitchWithEnumDetectorTest : LintTest {
                 |
                 |   enum class NumberUpToFive {
                 |     One, Two, Three, Four, Five
+                |   }
+                |}
+            """.trimMargin()
+        ).inKotlin toHave SomeError
+    }
+
+    @Test
+    fun inKotlinWhenExpression_whenArgumentTypeIsSealedClass_detectsErrors() {
+        expect(
+            """
+                |package foo
+                |
+                |class TestClass {
+                |   fun main(number: NumberUpToFive) = when (number) {
+                |       One -> System.out.println("One")
+                |       Two -> System.out.println("Two")
+                |       Three -> System.out.println("Three")
+                |       Four -> System.out.println("Four")
+                |       else -> System.out.println("Five")
+                |   }
+                |
+                |   sealed class NumberUpToFive {
+                |     object One: NumberUpToFive()
+                |     object Two: NumberUpToFive()
+                |     object Three: NumberUpToFive()
+                |     object Four: NumberUpToFive()
+                |     object Five: NumberUpToFive()
                 |   }
                 |}
             """.trimMargin()
