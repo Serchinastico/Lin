@@ -1,5 +1,9 @@
 package com.serchinastico.rules
 
+import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Location
+import com.android.tools.lint.detector.api.TextFormat
 import com.intellij.lang.Language
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -11,6 +15,10 @@ import org.jetbrains.uast.java.JavaUDefaultCaseExpression
 import org.jetbrains.uast.kotlin.KotlinUClass
 
 val Any?.exhaustive get() = Unit
+
+fun JavaContext.report(issue: Issue) {
+    report(issue, Location.create(file), issue.getBriefDescription(TextFormat.TEXT))
+}
 
 val USwitchExpression.clauses: List<USwitchClauseExpression>
     get() = body.expressions.mapNotNull { it as? USwitchClauseExpression }
