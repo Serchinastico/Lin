@@ -1,11 +1,49 @@
 package com.serchinastico.rules
 
+import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Location
+import com.android.tools.lint.detector.api.TextFormat
 import com.intellij.lang.Language
 import com.intellij.psi.PsiType
+import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.psi.impl.source.PsiImmediateClassType
+import org.jetbrains.kotlin.asJava.classes.KtLightClass
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.uast.*
+import org.jetbrains.uast.java.JavaUDefaultCaseExpression
 import org.jetbrains.uast.kotlin.KotlinUClass
 
 val Any?.exhaustive get() = Unit
+
+fun JavaContext.report(issue: Issue) {
+    report(issue, Location.create(file), issue.getBriefDescription(TextFormat.TEXT))
+}
+
+val USwitchExpression.clauses: List<USwitchClauseExpression>
+    get() = body.expressions.mapNotNull { it as? USwitchClauseExpression }
+
+val USwitchClauseExpression.isElseBranch: Boolean
+    get() = caseValues.isEmpty() || caseValues.any { it is JavaUDefaultCaseExpression }
+
+val PsiType.isSealed: Boolean
+    get() = when (this) {
+        is PsiClassReferenceType -> {
+            val resolvedType = resolve()
+            when (resolvedType) {
+                is KtLightClass -> (resolvedType.kotlinOrigin as? KtClass)?.isSealed() ?: false
+                else -> false
+            }
+        }
+        else -> false
+    }
+
+val PsiType.isEnum: Boolean
+    get() = when (this) {
+        is PsiImmediateClassType -> resolve()?.isEnum ?: false
+        is PsiClassReferenceType -> resolve()?.isEnum ?: false
+        else -> false
+    }
 
 val UField.isPrivate: Boolean
     get() {
