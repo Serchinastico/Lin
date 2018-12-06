@@ -1,4 +1,4 @@
-package com.serchinastico.rules
+package com.serchinastico.lin.rules
 
 import com.android.tools.lint.detector.api.*
 import java.util.*

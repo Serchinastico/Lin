@@ -1,4 +1,4 @@
-package com.serchinastico.rules
+package com.serchinastico.lin.rules
 
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
@@ -23,7 +23,8 @@ class NoPrintStackTraceCallsDetector : Detector(), Detector.UastScanner {
         )
     }
 
-    override fun getApplicableFiles(): EnumSet<Scope> = DETECTOR_SCOPE
+    override fun getApplicableFiles(): EnumSet<Scope> =
+        DETECTOR_SCOPE
 
     override fun getApplicableUastTypes(): List<Class<out UElement>>? =
         listOf(UCallExpression::class.java)

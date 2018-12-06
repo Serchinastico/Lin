@@ -1,4 +1,4 @@
-package com.serchinastico.rules
+package com.serchinastico.lin.rules
 
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
@@ -14,17 +14,19 @@ class NoElseInSwitchWithEnumOrSealedDetector : Detector(), Detector.UastScanner 
     companion object {
         private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
 
-        val ISSUE = createIssue<NoElseInSwitchWithEnumOrSealedDetector>(
-            "NoElseInSwitchWithEnum",
-            DETECTOR_SCOPE,
-            "There should not be else/default branches on a switch statement checking for enum/sealed class values",
-            "Adding an else/default branch breaks extensibility because it won't let you know if there is a missing " +
-                    "implementation when adding new types to the enum/sealed class",
-            Category.CORRECTNESS
-        )
+        val ISSUE =
+            createIssue<NoElseInSwitchWithEnumOrSealedDetector>(
+                "NoElseInSwitchWithEnum",
+                DETECTOR_SCOPE,
+                "There should not be else/default branches on a switch statement checking for enum/sealed class values",
+                "Adding an else/default branch breaks extensibility because it won't let you know if there is a missing " +
+                        "implementation when adding new types to the enum/sealed class",
+                Category.CORRECTNESS
+            )
     }
 
-    override fun getApplicableFiles(): EnumSet<Scope> = DETECTOR_SCOPE
+    override fun getApplicableFiles(): EnumSet<Scope> =
+        DETECTOR_SCOPE
 
     override fun getApplicableUastTypes(): List<Class<out UElement>>? =
         listOf(USwitchExpression::class.java)

@@ -1,11 +1,11 @@
-package com.serchinastico.rules.test
+package com.serchinastico.lin.test
 
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest.java
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.TextFormat
-import com.serchinastico.rules.exhaustive
+import com.serchinastico.lin.rules.exhaustive
 
 interface LintTest {
 

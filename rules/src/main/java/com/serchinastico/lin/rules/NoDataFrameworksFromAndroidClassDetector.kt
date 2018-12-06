@@ -1,4 +1,4 @@
-package com.serchinastico.rules
+package com.serchinastico.lin.rules
 
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
@@ -15,18 +15,20 @@ class NoDataFrameworksFromAndroidClassDetector : Detector(), Detector.UastScanne
     companion object {
         private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
 
-        val ISSUE = createIssue<NoDataFrameworksFromAndroidClassDetector>(
-            "NoDataFrameworksFromAndroidClass",
-            DETECTOR_SCOPE,
-            "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
-                    " Android related view.",
-            "Your Android classes should not be responsible for retrieving or storing information, that should be " +
-                    "responsibility of another classes.",
-            Category.INTEROPERABILITY
-        )
+        val ISSUE =
+            createIssue<NoDataFrameworksFromAndroidClassDetector>(
+                "NoDataFrameworksFromAndroidClass",
+                DETECTOR_SCOPE,
+                "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
+                        " Android related view.",
+                "Your Android classes should not be responsible for retrieving or storing information, that should be " +
+                        "responsibility of another classes.",
+                Category.INTEROPERABILITY
+            )
     }
 
-    override fun getApplicableFiles(): EnumSet<Scope> = DETECTOR_SCOPE
+    override fun getApplicableFiles(): EnumSet<Scope> =
+        DETECTOR_SCOPE
 
     override fun getApplicableUastTypes(): List<Class<out UElement>>? =
         listOf(UImportStatement::class.java)
