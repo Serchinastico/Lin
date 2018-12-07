@@ -1,34 +1,50 @@
 package com.serchinastico.lin.dsl
 
-import com.autodsl.annotation.AutoDsl
+import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UFile
+import org.jetbrains.uast.UImportStatement
 
-@AutoDsl("file")
-data class LinFile(
-    val imports: List<LinImport>,
-    val types: List<LinType>
-) : SuchThat
+class LinFile : SuchThat<UFile> by SuchThatStored() {
 
-@AutoDsl("type")
-data class LinType(
-    override val suchThat: () -> Boolean
-) : SuchThat
+    private val imports: MutableList<LinImport> = mutableListOf()
+    private val types: MutableList<LinType> = mutableListOf()
 
-@AutoDsl("import")
-data class LinImport(
-    override val suchThat: () -> Boolean
-) : SuchThat
+    fun import(block: LinImport.() -> LinImport): LinFile {
+        imports.add(LinImport().block())
+        return this
+    }
 
-@AutoDsl
-data class Something(val id: String)
+    fun type(block: LinType.() -> LinType): LinFile {
+        types.add(LinType().block())
+        return this
+    }
+}
 
-interface SuchThat {
-    val suchThat: (() -> Boolean)?
-        get() = null
+fun file(block: LinFile.() -> LinFile): LinFile {
+    return LinFile().block()
+}
+
+class LinImport : SuchThat<UImportStatement> by SuchThatStored()
+
+class LinType : SuchThat<UClass> by SuchThatStored()
+
+class SuchThatStored<T> : SuchThat<T> {
+    override var suchThatPredicate: ((T) -> Boolean)? = null
+
+    override fun <S : SuchThat<T>> suchThat(predicate: (T) -> Boolean): S {
+        suchThatPredicate = predicate
+        return this as S
+    }
+}
+
+interface SuchThat<T> {
+    val suchThatPredicate: ((T) -> Boolean)?
+    fun <S : SuchThat<T>> suchThat(predicate: (T) -> Boolean): S
 }
 
 fun main(args: Array<String>) {
     file {
-        import { suchThat = { true } }
-        type { suchThat = { true } }
+        import { suchThat { it.isFrameworkLibraryImport } }
+        type { suchThat { node -> node.uastSuperTypes.any { it.isAndroidFrameworkType } } }
     }
 }

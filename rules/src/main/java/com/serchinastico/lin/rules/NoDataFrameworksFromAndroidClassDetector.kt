@@ -9,6 +9,17 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UImportStatement
 import java.util.*
 
+/**
+ *  file {
+ *      anyImport { suchThat { isFrameworkLibraryImport } }
+ *
+ *      anyType {
+ *          suchThat {
+ *              uastSuperTypes.any { it.isAndroidFrameworkType }
+ *          }
+ *      }
+ *  }
+ */
 
 class NoDataFrameworksFromAndroidClassDetector : Detector(), Detector.UastScanner {
 
