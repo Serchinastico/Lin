@@ -5,6 +5,7 @@ import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
+import com.serchinastico.lin.dsl.createIssue
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UImportStatement
 import java.util.*

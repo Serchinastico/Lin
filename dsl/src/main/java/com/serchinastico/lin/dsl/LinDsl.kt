@@ -1,22 +1,39 @@
 package com.serchinastico.lin.dsl
 
+import com.android.tools.lint.client.api.UElementHandler
+import com.android.tools.lint.detector.api.*
 import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UImportStatement
+import java.util.*
+import kotlin.reflect.KClass
 
 class LinFile : SuchThat<UFile> by SuchThatStored() {
 
-    private val imports: MutableList<LinImport> = mutableListOf()
-    private val types: MutableList<LinType> = mutableListOf()
+    private val importRules: MutableList<LinImport> = mutableListOf()
+    private val typeRules: MutableList<LinType> = mutableListOf()
 
     fun import(block: LinImport.() -> LinImport): LinFile {
-        imports.add(LinImport().block())
+        importRules.add(LinImport().block())
         return this
     }
 
     fun type(block: LinType.() -> LinType): LinFile {
-        types.add(LinType().block())
+        typeRules.add(LinType().block())
         return this
+    }
+
+    fun anyImport(imports: List<UImportStatement>): Boolean = imports.any { import ->
+        importRules.any { rule ->
+            rule.suchThatPredicate?.invoke(import) ?: false
+        }
+    }
+
+    fun anyType(types: List<UClass>): Boolean = types.any { type ->
+        typeRules.any { rule ->
+            rule.suchThatPredicate?.invoke(type) ?: false
+        }
     }
 }
 
@@ -43,8 +60,84 @@ interface SuchThat<T> {
 }
 
 fun main(args: Array<String>) {
-    file {
-        import { suchThat { it.isFrameworkLibraryImport } }
-        type { suchThat { node -> node.uastSuperTypes.any { it.isAndroidFrameworkType } } }
+    val detectorScope = Scope.JAVA_FILE_SCOPE
+
+    createRule(
+        issue(
+            "NoDataFrameworksFromAndroidClass",
+            detectorScope,
+            "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
+                    " Android related view.",
+            "Your Android classes should not be responsible for retrieving or storing information, that should be " +
+                    "responsibility of another classes.",
+            Category.INTEROPERABILITY
+        )
+    ) {
+        file {
+            import { suchThat { it.isFrameworkLibraryImport } }
+            type { suchThat { node -> node.uastSuperTypes.any { it.isAndroidFrameworkType } } }
+        }
+    }
+}
+
+fun issue(
+    id: String,
+    scope: EnumSet<Scope>,
+    description: String,
+    explanation: String,
+    category: Category
+): IssueBuilder {
+    return IssueBuilder(id, scope, description, explanation, category)
+}
+
+data class IssueBuilder(
+    val id: String,
+    val scope: EnumSet<Scope>,
+    val description: String,
+    val explanation: String,
+    val category: Category,
+    var priority: Int = 5,
+    var severity: Severity = Severity.ERROR
+) {
+    fun <T : Detector> build(detectorClass: KClass<T>): Issue =
+        Issue.create(
+            id,
+            description,
+            explanation,
+            category,
+            priority,
+            severity,
+            Implementation(detectorClass.java, scope)
+        )
+}
+
+fun createRule(
+    issueBuilder: IssueBuilder,
+    descriptor: () -> LinFile
+): Detector = object : Detector(), Detector.UastScanner {
+
+    private val detectorKClass: KClass<out Detector>
+        get() = this::class
+
+    override fun getApplicableFiles(): EnumSet<Scope> =
+        issueBuilder.scope
+
+    override fun getApplicableUastTypes(): List<Class<out UElement>>? =
+        listOf(UFile::class.java)
+
+    override fun createUastHandler(context: JavaContext): UElementHandler? = object : UElementHandler() {
+        override fun visitFile(node: UFile) {
+            val rule = descriptor()
+
+            if (!rule.anyImport(node.imports)) {
+                return
+            }
+
+            if (!rule.anyType(node.classes)) {
+                return
+            }
+
+            context.report(issueBuilder.build(detectorKClass))
+        }
     }
 }
