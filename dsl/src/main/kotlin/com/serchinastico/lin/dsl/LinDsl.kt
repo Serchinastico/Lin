@@ -31,10 +31,16 @@ data class LinRule(val issueBuilder: IssueBuilder) {
     }
 }
 
-class LinFile : SuchThat<UFile> by SuchThatStored() {
+class LinFile {
 
     private val importRules: MutableList<LinImport> = mutableListOf()
     private val typeRules: MutableList<LinType> = mutableListOf()
+    private var suchThatPredicate: ((UFile) -> Boolean)? = null
+
+    fun suchThat(predicate: (UFile) -> Boolean): LinFile {
+        suchThatPredicate = predicate
+        return this
+    }
 
     fun import(block: LinImport.() -> LinImport): LinFile {
         importRules.add(LinImport().block())
@@ -61,23 +67,22 @@ class LinFile : SuchThat<UFile> by SuchThatStored() {
 
 fun rule(issueBuilder: IssueBuilder, block: LinRule.() -> LinRule): LinRule = LinRule(issueBuilder).block()
 
+class LinImport {
+    var suchThatPredicate: ((UImportStatement) -> Boolean)? = null
 
-class LinImport : SuchThat<UImportStatement> by SuchThatStored()
-
-class LinType : SuchThat<UClass> by SuchThatStored()
-
-class SuchThatStored<T> : SuchThat<T> {
-    override var suchThatPredicate: ((T) -> Boolean)? = null
-
-    override fun <S : SuchThat<T>> suchThat(predicate: (T) -> Boolean): S {
+    fun suchThat(predicate: (UImportStatement) -> Boolean): LinImport {
         suchThatPredicate = predicate
-        return this as S
+        return this
     }
 }
 
-interface SuchThat<T> {
-    val suchThatPredicate: ((T) -> Boolean)?
-    fun <S : SuchThat<T>> suchThat(predicate: (T) -> Boolean): S
+class LinType {
+    var suchThatPredicate: ((UClass) -> Boolean)? = null
+
+    fun suchThat(predicate: (UClass) -> Boolean): LinType {
+        suchThatPredicate = predicate
+        return this
+    }
 }
 
 fun main(args: Array<String>) {

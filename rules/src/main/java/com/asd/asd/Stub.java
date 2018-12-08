@@ -1,4 +1,4 @@
 package com.asd.asd;
 
-public class Asd {
+public class Stub {
 }
