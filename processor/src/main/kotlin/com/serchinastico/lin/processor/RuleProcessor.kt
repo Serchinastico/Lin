@@ -6,12 +6,12 @@ import com.serchinastico.lin.dsl.IssueBuilder
 import com.serchinastico.lin.dsl.LinRule
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import java.io.File
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
+import javax.tools.StandardLocation
 
 
 @AutoService(Processor::class)
@@ -56,27 +56,36 @@ class RuleProcessor : AbstractProcessor() {
                 val issueId = element.simpleName.toString().capitalize()
                 val packageName = processingEnv.elementUtils.getPackageOf(element).qualifiedName.toString()
 
-                val fileName = "${issueId}_LinRule"
-                val ruleFile = FileSpec.builder(packageName, fileName)
+                val className = "${issueId}Detector"
+                val ruleFile = FileSpec.builder(packageName, className)
                     .addType(
-                        TypeSpec.classBuilder(fileName)
+                        TypeSpec.classBuilder(className)
                             .superclass(DETECTOR_CLASS_NAME)
                             .addSuperinterface(UAST_SCANNER_CLASS_NAME)
-                            .addRuleProperty(element.simpleName.toString())
-                            .addIssueBuilderProperty()
-                            .addIssueProperty()
+                            .addCompanionObject {
+                                addRuleProperty(element.simpleName.toString())
+                                    .addIssueBuilderProperty()
+                                    .addIssueProperty(className)
+                            }
                             .addGetApplicableFilesFunction()
                             .addGetApplicableUastTypes()
                             .addCreateUastHandler()
                             .build()
                     )
                     .build()
-                val kaptKotlinGeneratedDir = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]
-                ruleFile.writeTo(File(kaptKotlinGeneratedDir, fileName))
+
+                val kotlinFileObject =
+                    processingEnv.filer.createResource(StandardLocation.SOURCE_OUTPUT, packageName, "$className.kt")
+                val writer = kotlinFileObject.openWriter()
+                ruleFile.writeTo(writer)
+                writer.close()
             }
 
         return true
     }
+
+    private fun TypeSpec.Builder.addCompanionObject(block: TypeSpec.Builder.() -> TypeSpec.Builder): TypeSpec.Builder =
+        addType(TypeSpec.companionObjectBuilder().block().build())
 
     private fun getElementHandlerType(): TypeSpec =
         TypeSpec.anonymousClassBuilder()
@@ -125,13 +134,13 @@ class RuleProcessor : AbstractProcessor() {
                 .build()
         )
 
-    private fun TypeSpec.Builder.addIssueProperty(): TypeSpec.Builder =
+    private fun TypeSpec.Builder.addIssueProperty(className: String): TypeSpec.Builder =
         addProperty(
             PropertySpec.builder("issue", ISSUE_CLASS_NAME)
                 .delegate(
                     CodeBlock.builder()
                         .beginControlFlow("lazy")
-                        .add("rule.issueBuilder.build(this::class)")
+                        .add("rule.issueBuilder.build($className::class)")
                         .endControlFlow()
                         .build()
                 )

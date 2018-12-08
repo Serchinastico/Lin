@@ -2,6 +2,14 @@ apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
 
+sourceSets {
+    main {
+        java {
+            srcDirs += "${buildDir.absolutePath}/generated/source/kapt/main/"
+        }
+    }
+}
+
 dependencies {
     implementation project(":dsl")
     implementation project(":annotations")

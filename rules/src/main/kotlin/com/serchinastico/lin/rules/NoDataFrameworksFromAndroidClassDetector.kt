@@ -45,7 +45,6 @@ fun noDataFrameworksRule() = rule(
 }
 
 class NoDataFrameworksFromAndroidClassDetector : Detector(), Detector.UastScanner {
-
     companion object {
         private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
 

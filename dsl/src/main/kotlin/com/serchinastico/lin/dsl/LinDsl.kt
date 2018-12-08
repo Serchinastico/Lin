@@ -1,9 +1,7 @@
 package com.serchinastico.lin.dsl
 
-import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.*
 import org.jetbrains.uast.UClass
-import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UImportStatement
 import java.util.*
@@ -133,76 +131,3 @@ data class IssueBuilder(
             Implementation(detectorClass.java, scope)
         )
 }
-
-val linRegistry: MutableMap<String, DetectorConfiguration> = mutableMapOf()
-
-data class DetectorConfiguration(
-    val issueBuilder: IssueBuilder,
-    val rule: () -> LinRule
-)
-
-class LinDetector : Detector(), Detector.UastScanner {
-    private val issueBuilder: IssueBuilder by lazy { linRegistry[hashCode().toString()]!!.issueBuilder }
-    private val rule: LinRule by lazy { linRegistry[hashCode().toString()]!!.rule() }
-
-    val issue: Issue by lazy { issueBuilder.build(this::class) }
-
-    private val detectorKClass: KClass<out Detector>
-        get() = this::class
-
-    override fun getApplicableFiles(): EnumSet<Scope> =
-        issueBuilder.scope
-
-    override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-        listOf(UFile::class.java)
-
-    override fun createUastHandler(context: JavaContext): UElementHandler? = object : UElementHandler() {
-        override fun visitFile(node: UFile) {
-            if (rule.matches(node)) {
-                context.report(issue)
-            }
-        }
-    }
-}
-
-fun createDetector(
-    issueBuilder: IssueBuilder,
-    rule: () -> LinRule
-): LinDetector {
-    val issueId = issueBuilder.id
-    linRegistry[issueId] = DetectorConfiguration(issueBuilder, rule)
-    return LinDetector()
-}
-
-//fun createDetector(
-//    issueBuilder: IssueBuilder,
-//    descriptor: () -> LinFile
-//): LinDetector = object : LinDetector() {
-//
-//    override val issue: Issue by lazy { issueBuilder.build(detectorKClass) }
-//
-//    private val detectorKClass: KClass<out Detector>
-//        get() = this::class
-//
-//    override fun getApplicableFiles(): EnumSet<Scope> =
-//        issueBuilder.scope
-//
-//    override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-//        listOf(UFile::class.java)
-//
-//    override fun createUastHandler(context: JavaContext): UElementHandler? = object : UElementHandler() {
-//        override fun visitFile(node: UFile) {
-//            val rule = descriptor()
-//
-//            if (!rule.anyImport(node.imports)) {
-//                return
-//            }
-//
-//            if (!rule.anyType(node.classes)) {
-//                return
-//            }
-//
-//            context.report(issue)
-//        }
-//    }
-//}
