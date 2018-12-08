@@ -9,6 +9,30 @@ import org.jetbrains.uast.UImportStatement
 import java.util.*
 import kotlin.reflect.KClass
 
+data class LinRule(val issueBuilder: IssueBuilder) {
+
+    private var file: LinFile? = null
+
+    fun file(block: LinFile.() -> LinFile): LinRule {
+        file = LinFile().block()
+        return this
+    }
+
+    fun matches(node: UFile): Boolean {
+        val file = file ?: return false
+
+        if (!file.anyImport(node.imports)) {
+            return false
+        }
+
+        if (!file.anyType(node.classes)) {
+            return false
+        }
+
+        return true
+    }
+}
+
 class LinFile : SuchThat<UFile> by SuchThatStored() {
 
     private val importRules: MutableList<LinImport> = mutableListOf()
@@ -37,9 +61,8 @@ class LinFile : SuchThat<UFile> by SuchThatStored() {
     }
 }
 
-fun file(block: LinFile.() -> LinFile): LinFile {
-    return LinFile().block()
-}
+fun rule(issueBuilder: IssueBuilder, block: LinRule.() -> LinRule): LinRule = LinRule(issueBuilder).block()
+
 
 class LinImport : SuchThat<UImportStatement> by SuchThatStored()
 
@@ -62,7 +85,7 @@ interface SuchThat<T> {
 fun main(args: Array<String>) {
     val detectorScope = Scope.JAVA_FILE_SCOPE
 
-    createDetector(
+    rule(
         issue(
             "NoDataFrameworksFromAndroidClass",
             detectorScope,
@@ -115,14 +138,14 @@ val linRegistry: MutableMap<String, DetectorConfiguration> = mutableMapOf()
 
 data class DetectorConfiguration(
     val issueBuilder: IssueBuilder,
-    val rule: () -> LinFile
+    val rule: () -> LinRule
 )
 
 class LinDetector : Detector(), Detector.UastScanner {
     private val issueBuilder: IssueBuilder by lazy { linRegistry[hashCode().toString()]!!.issueBuilder }
-    private val rule: LinFile by lazy { linRegistry[hashCode().toString()]!!.rule() }
+    private val rule: LinRule by lazy { linRegistry[hashCode().toString()]!!.rule() }
 
-    val issue: Issue by lazy { issueBuilder.build(detectorKClass) }
+    val issue: Issue by lazy { issueBuilder.build(this::class) }
 
     private val detectorKClass: KClass<out Detector>
         get() = this::class
@@ -135,22 +158,16 @@ class LinDetector : Detector(), Detector.UastScanner {
 
     override fun createUastHandler(context: JavaContext): UElementHandler? = object : UElementHandler() {
         override fun visitFile(node: UFile) {
-            if (!rule.anyImport(node.imports)) {
-                return
+            if (rule.matches(node)) {
+                context.report(issue)
             }
-
-            if (!rule.anyType(node.classes)) {
-                return
-            }
-
-            context.report(issue)
         }
     }
 }
 
 fun createDetector(
     issueBuilder: IssueBuilder,
-    rule: () -> LinFile
+    rule: () -> LinRule
 ): LinDetector {
     val issueId = issueBuilder.id
     linRegistry[issueId] = DetectorConfiguration(issueBuilder, rule)

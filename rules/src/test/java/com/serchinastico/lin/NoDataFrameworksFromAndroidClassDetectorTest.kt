@@ -1,10 +1,5 @@
 package com.serchinastico.lin
 
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest
-import com.android.tools.lint.checks.infrastructure.TestLintTask
-import com.android.tools.lint.detector.api.Category
-import com.android.tools.lint.detector.api.Scope
-import com.serchinastico.lin.dsl.*
 import com.serchinastico.lin.rules.NoDataFrameworksFromAndroidClassDetector
 import com.serchinastico.lin.test.LintTest
 import com.serchinastico.lin.test.LintTest.Expectation.NoErrors
@@ -17,35 +12,6 @@ class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
 
     @Test
     fun inJavaNonAndroidClass_whenFileHasFrameworkImport_detectsNoErrors() {
-        val issueBuilder = issue(
-            "NoDataFrameworksFromAndroidClass",
-            Scope.JAVA_FILE_SCOPE,
-            "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
-                    " Android related view.",
-            "Your Android classes should not be responsible for retrieving or storing information, that should be " +
-                    "responsibility of another classes.",
-            Category.INTEROPERABILITY
-        )
-
-        val detector = createDetector(issueBuilder) {
-            file {
-                import { suchThat { it.isFrameworkLibraryImport } }
-                type { suchThat { node -> node.uastSuperTypes.any { it.isAndroidFrameworkType } } }
-            }
-        }
-
-        TestLintTask.lint()
-            .files(
-                LintDetectorTest.java(
-                    """
-
-                    """.trimIndent()
-                )
-            )
-            .issues(detector.issue)
-            .run()
-            .expectClean()
-
         expect(
             """
                 |package foo;
