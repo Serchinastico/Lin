@@ -213,6 +213,22 @@ class RuleProcessor : AbstractProcessor() {
                     )
                     .build()
             )
+            .addFunction(
+                FunSpec.builder("visitField")
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addParameter(
+                        "node",
+                        ClassName("org.jetbrains.uast", "UField")
+                    )
+                    .addCode(
+                        """
+                            |if (rule.matches(node)) {
+                            |   context.report(issue)
+                            |}
+                            """.trimMargin()
+                    )
+                    .build()
+            )
             .build()
 
     private fun ensureOutputDirectoryExists(generatedSourcesRoot: String): Boolean =

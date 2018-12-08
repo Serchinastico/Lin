@@ -8,7 +8,7 @@ import org.junit.Test
 
 class NoPublicViewPropertiesDetectorTest : LintTest {
 
-    override val issue = NoPublicViewPropertiesDetector.ISSUE
+    override val issue = NoPublicViewPropertiesDetector.issue
 
     @Test
     fun inJavaClass_whenViewFieldIsPrivate_detectsNoErrors() {

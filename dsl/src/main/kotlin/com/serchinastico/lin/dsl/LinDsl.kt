@@ -10,12 +10,14 @@ data class LinRule(val issueBuilder: IssueBuilder) {
     private var file: LinFile? = null
     private var switchExpression: LinSwitchExpression? = null
     private var callExpression: LinCallExpression? = null
+    private var field: LinField? = null
 
     val applicableTypes: List<Class<out UElement>>
         get() = when {
             file != null -> listOf(UFile::class.java)
             switchExpression != null -> listOf(USwitchExpression::class.java)
             callExpression != null -> listOf(UCallExpression::class.java)
+            this.field != null -> listOf(UField::class.java)
             else -> emptyList()
         }
 
@@ -34,10 +36,16 @@ data class LinRule(val issueBuilder: IssueBuilder) {
         return this
     }
 
+    fun field(block: LinField.() -> LinField): LinRule {
+        field = LinField().block()
+        return this
+    }
+
     fun matches(node: UElement): Boolean = when (node) {
         is UFile -> matches(node)
         is USwitchExpression -> matches(node)
         is UCallExpression -> matches(node)
+        is UField -> matches(node)
         else -> false
     }
 
@@ -63,6 +71,11 @@ data class LinRule(val issueBuilder: IssueBuilder) {
     private fun matches(node: UCallExpression): Boolean {
         val callExpression = callExpression ?: return false
         return callExpression.suchThatPredicate?.invoke(node) ?: false
+    }
+
+    private fun matches(node: UField): Boolean {
+        val field = field ?: return false
+        return field.suchThatPredicate?.invoke(node) ?: false
     }
 }
 
@@ -133,6 +146,15 @@ class LinCallExpression {
     var suchThatPredicate: ((UCallExpression) -> Boolean)? = null
 
     fun suchThat(predicate: (UCallExpression) -> Boolean): LinCallExpression {
+        suchThatPredicate = predicate
+        return this
+    }
+}
+
+class LinField {
+    var suchThatPredicate: ((UField) -> Boolean)? = null
+
+    fun suchThat(predicate: (UField) -> Boolean): LinField {
         suchThatPredicate = predicate
         return this
     }
