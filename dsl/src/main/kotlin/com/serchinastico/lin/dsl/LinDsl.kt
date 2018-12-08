@@ -9,11 +9,13 @@ data class LinRule(val issueBuilder: IssueBuilder) {
 
     private var file: LinFile? = null
     private var switchExpression: LinSwitchExpression? = null
+    private var callExpression: LinCallExpression? = null
 
     val applicableTypes: List<Class<out UElement>>
         get() = when {
             file != null -> listOf(UFile::class.java)
             switchExpression != null -> listOf(USwitchExpression::class.java)
+            callExpression != null -> listOf(UCallExpression::class.java)
             else -> emptyList()
         }
 
@@ -27,12 +29,17 @@ data class LinRule(val issueBuilder: IssueBuilder) {
         return this
     }
 
+    fun callExpression(block: LinCallExpression.() -> LinCallExpression): LinRule {
+        callExpression = LinCallExpression().block()
+        return this
+    }
+
     fun matches(node: UElement): Boolean = when (node) {
         is UFile -> matches(node)
         is USwitchExpression -> matches(node)
+        is UCallExpression -> matches(node)
         else -> false
     }
-
 
     fun matches(node: UFile): Boolean {
         val file = file ?: return false
@@ -51,6 +58,11 @@ data class LinRule(val issueBuilder: IssueBuilder) {
     private fun matches(node: USwitchExpression): Boolean {
         val switchExpression = switchExpression ?: return false
         return switchExpression.suchThatPredicate?.invoke(node) ?: false
+    }
+
+    private fun matches(node: UCallExpression): Boolean {
+        val callExpression = callExpression ?: return false
+        return callExpression.suchThatPredicate?.invoke(node) ?: false
     }
 }
 
@@ -112,6 +124,15 @@ class LinSwitchExpression {
     var suchThatPredicate: ((USwitchExpression) -> Boolean)? = null
 
     fun suchThat(predicate: (USwitchExpression) -> Boolean): LinSwitchExpression {
+        suchThatPredicate = predicate
+        return this
+    }
+}
+
+class LinCallExpression {
+    var suchThatPredicate: ((UCallExpression) -> Boolean)? = null
+
+    fun suchThat(predicate: (UCallExpression) -> Boolean): LinCallExpression {
         suchThatPredicate = predicate
         return this
     }

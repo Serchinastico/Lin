@@ -8,7 +8,7 @@ import org.junit.Test
 
 class NoPrintStackTraceCallsDetectorTest : LintTest {
 
-    override val issue = NoPrintStackTraceCallsDetector.ISSUE
+    override val issue = NoPrintStackTraceCallsDetector.issue
 
     @Test
     fun inJavaNonThrowableClass_whenCallIsPrintStackTrace_detectsNoErrors() {

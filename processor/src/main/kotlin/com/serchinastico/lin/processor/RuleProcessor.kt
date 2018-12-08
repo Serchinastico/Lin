@@ -197,6 +197,22 @@ class RuleProcessor : AbstractProcessor() {
                     )
                     .build()
             )
+            .addFunction(
+                FunSpec.builder("visitCallExpression")
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addParameter(
+                        "node",
+                        ClassName("org.jetbrains.uast", "UCallExpression")
+                    )
+                    .addCode(
+                        """
+                            |if (rule.matches(node)) {
+                            |   context.report(issue)
+                            |}
+                            """.trimMargin()
+                    )
+                    .build()
+            )
             .build()
 
     private fun ensureOutputDirectoryExists(generatedSourcesRoot: String): Boolean =

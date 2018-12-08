@@ -1,48 +1,28 @@
 package com.serchinastico.lin.rules
 
-import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
-import com.android.tools.lint.detector.api.Detector
-import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
-import com.serchinastico.lin.dsl.createIssue
-import org.jetbrains.uast.UCallExpression
-import org.jetbrains.uast.UElement
-import java.util.*
+import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.dsl.issue
+import com.serchinastico.lin.dsl.rule
 
-class NoPrintStackTraceCallsDetector : Detector(), Detector.UastScanner {
-
-    companion object {
-        private val DETECTOR_SCOPE = Scope.JAVA_FILE_SCOPE
-
-        val ISSUE = createIssue<NoPrintStackTraceCallsDetector>(
-            "NoPrintStackTraceCalls",
-            DETECTOR_SCOPE,
-            "There should not be calls to the printStackTrace method in Throwable instances",
-            "Errors should be logged with a configured logger or sent to the backend for faster response",
-            Category.CORRECTNESS
-        )
-    }
-
-    override fun getApplicableFiles(): EnumSet<Scope> =
-        DETECTOR_SCOPE
-
-    override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-        listOf(UCallExpression::class.java)
-
-    override fun createUastHandler(context: JavaContext): UElementHandler? =
-        LinElementHandler(context)
-
-    private class LinElementHandler(private val context: JavaContext) : UElementHandler() {
-        override fun visitCallExpression(node: UCallExpression) {
-            val receiverType = node.receiverType ?: return
+@Rule
+fun noPrintStackTraceCalls() = rule(
+    issue(
+        Scope.JAVA_FILE_SCOPE,
+        "There should not be calls to the printStackTrace method in Throwable instances",
+        "Errors should be logged with a configured logger or sent to the backend for faster response",
+        Category.CORRECTNESS
+    )
+) {
+    callExpression {
+        suchThat { node ->
+            val receiverType = node.receiverType ?: (return@suchThat false)
 
             val isReceiverChildOfThrowable = receiverType.isClassOrSubclassOf("java.lang.Throwable", "kotlin.Throwable")
             val isMethodPrintStackTrace = node.methodIdentifier?.name == "printStackTrace"
 
-            if (isReceiverChildOfThrowable && isMethodPrintStackTrace) {
-                context.report(ISSUE)
-            }
+            isReceiverChildOfThrowable && isMethodPrintStackTrace
         }
     }
 }
