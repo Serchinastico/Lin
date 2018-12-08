@@ -1,20 +1,38 @@
 package com.serchinastico.lin.dsl
 
 import com.android.tools.lint.detector.api.*
-import org.jetbrains.uast.UClass
-import org.jetbrains.uast.UFile
-import org.jetbrains.uast.UImportStatement
+import org.jetbrains.uast.*
 import java.util.*
 import kotlin.reflect.KClass
 
 data class LinRule(val issueBuilder: IssueBuilder) {
 
     private var file: LinFile? = null
+    private var switchExpression: LinSwitchExpression? = null
+
+    val applicableTypes: List<Class<out UElement>>
+        get() = when {
+            file != null -> listOf(UFile::class.java)
+            switchExpression != null -> listOf(USwitchExpression::class.java)
+            else -> emptyList()
+        }
 
     fun file(block: LinFile.() -> LinFile): LinRule {
         file = LinFile().block()
         return this
     }
+
+    fun switch(block: LinSwitchExpression.() -> LinSwitchExpression): LinRule {
+        switchExpression = LinSwitchExpression().block()
+        return this
+    }
+
+    fun matches(node: UElement): Boolean = when (node) {
+        is UFile -> matches(node)
+        is USwitchExpression -> matches(node)
+        else -> false
+    }
+
 
     fun matches(node: UFile): Boolean {
         val file = file ?: return false
@@ -28,6 +46,11 @@ data class LinRule(val issueBuilder: IssueBuilder) {
         }
 
         return true
+    }
+
+    private fun matches(node: USwitchExpression): Boolean {
+        val switchExpression = switchExpression ?: return false
+        return switchExpression.suchThatPredicate?.invoke(node) ?: false
     }
 }
 
@@ -85,12 +108,20 @@ class LinType {
     }
 }
 
+class LinSwitchExpression {
+    var suchThatPredicate: ((USwitchExpression) -> Boolean)? = null
+
+    fun suchThat(predicate: (USwitchExpression) -> Boolean): LinSwitchExpression {
+        suchThatPredicate = predicate
+        return this
+    }
+}
+
 fun main(args: Array<String>) {
     val detectorScope = Scope.JAVA_FILE_SCOPE
 
     rule(
         issue(
-            "NoDataFrameworksFromAndroidClass",
             detectorScope,
             "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
                     " Android related view.",
@@ -107,17 +138,15 @@ fun main(args: Array<String>) {
 }
 
 fun issue(
-    id: String,
     scope: EnumSet<Scope>,
     description: String,
     explanation: String,
     category: Category
 ): IssueBuilder {
-    return IssueBuilder(id, scope, description, explanation, category)
+    return IssueBuilder(scope, description, explanation, category)
 }
 
 data class IssueBuilder(
-    val id: String,
     val scope: EnumSet<Scope>,
     val description: String,
     val explanation: String,
@@ -127,7 +156,7 @@ data class IssueBuilder(
 ) {
     fun <T : Detector> build(detectorClass: KClass<T>): Issue =
         Issue.create(
-            id,
+            detectorClass.simpleName ?: "RuleWithNoId",
             description,
             explanation,
             category,

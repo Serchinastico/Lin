@@ -87,27 +87,6 @@ class RuleProcessor : AbstractProcessor() {
     private fun TypeSpec.Builder.addCompanionObject(block: TypeSpec.Builder.() -> TypeSpec.Builder): TypeSpec.Builder =
         addType(TypeSpec.companionObjectBuilder().block().build())
 
-    private fun getElementHandlerType(): TypeSpec =
-        TypeSpec.anonymousClassBuilder()
-            .superclass(U_ELEMENT_HANDLER_CLASS_NAME)
-            .addFunction(
-                FunSpec.builder("visitFile")
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter(
-                        "node",
-                        ClassName("org.jetbrains.uast", "UFile")
-                    )
-                    .addCode(
-                        """
-                            |if (rule.matches(node)) {
-                            |   context.report(issue)
-                            |}
-                            """.trimMargin()
-                    )
-                    .build()
-            )
-            .build()
-
     private fun TypeSpec.Builder.addRuleProperty(ruleText: String): TypeSpec.Builder =
         addProperty(
             PropertySpec.builder("rule", LinRule::class)
@@ -160,7 +139,7 @@ class RuleProcessor : AbstractProcessor() {
         addFunction(
             FunSpec.builder("getApplicableUastTypes")
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return listOf(UFile::class.java)")
+                .addCode("return rule.applicableTypes")
                 .returns(LIST_CLASS_NAME.parameterizedBy(CLASS_CLASS_NAME.parameterizedBy(U_ELEMENT_OUT_CLASS_NAME)))
                 .build()
         )
@@ -182,6 +161,43 @@ class RuleProcessor : AbstractProcessor() {
                 )
                 .build()
         )
+
+    private fun getElementHandlerType(): TypeSpec =
+        TypeSpec.anonymousClassBuilder()
+            .superclass(U_ELEMENT_HANDLER_CLASS_NAME)
+            .addFunction(
+                FunSpec.builder("visitFile")
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addParameter(
+                        "node",
+                        ClassName("org.jetbrains.uast", "UFile")
+                    )
+                    .addCode(
+                        """
+                            |if (rule.matches(node)) {
+                            |   context.report(issue)
+                            |}
+                            """.trimMargin()
+                    )
+                    .build()
+            )
+            .addFunction(
+                FunSpec.builder("visitSwitchExpression")
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addParameter(
+                        "node",
+                        ClassName("org.jetbrains.uast", "USwitchExpression")
+                    )
+                    .addCode(
+                        """
+                            |if (rule.matches(node)) {
+                            |   context.report(issue)
+                            |}
+                            """.trimMargin()
+                    )
+                    .build()
+            )
+            .build()
 
     private fun ensureOutputDirectoryExists(generatedSourcesRoot: String): Boolean =
         if (generatedSourcesRoot.isEmpty()) {

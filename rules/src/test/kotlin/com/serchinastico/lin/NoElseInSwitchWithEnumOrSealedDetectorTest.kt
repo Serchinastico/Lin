@@ -8,7 +8,7 @@ import org.junit.Test
 
 class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
 
-    override val issue = NoElseInSwitchWithEnumOrSealedDetector.ISSUE
+    override val issue = NoElseInSwitchWithEnumOrSealedDetector.issue
 
     @Test
     fun inJavaSwitchStatement_whenAllCasesAreCovered_detectsNoErrors() {

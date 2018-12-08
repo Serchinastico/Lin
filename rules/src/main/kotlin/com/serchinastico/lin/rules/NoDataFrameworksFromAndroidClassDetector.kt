@@ -9,7 +9,6 @@ import com.serchinastico.lin.dsl.rule
 @Rule
 fun noDataFrameworksFromAndroidClass() = rule(
     issue(
-        "NoDataFrameworksFromAndroidClass",
         Scope.JAVA_FILE_SCOPE,
         "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
                 " Android related view.",
