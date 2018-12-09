@@ -58,6 +58,7 @@ class RuleProcessor : AbstractProcessor() {
 
                 val className = "${issueId}Detector"
                 val ruleFile = FileSpec.builder(packageName, className)
+                    .addImport("com.serchinastico.lin.dsl", "report")
                     .addType(
                         TypeSpec.classBuilder(className)
                             .superclass(DETECTOR_CLASS_NAME)

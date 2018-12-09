@@ -11,8 +11,8 @@ sourceSets {
 }
 
 dependencies {
-    implementation project(":dsl")
-    implementation project(":annotations")
+    compileOnly project(":dsl")
+    compileOnly project(":annotations")
     kapt project(":processor")
 
     compileOnly 'com.android.tools.lint:lint:26.2.1'
