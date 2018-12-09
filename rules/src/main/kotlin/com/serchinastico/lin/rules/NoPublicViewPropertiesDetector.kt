@@ -3,6 +3,8 @@ package com.serchinastico.lin.rules
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.dsl.isClassOrSubclassOf
+import com.serchinastico.lin.dsl.isPrivate
 import com.serchinastico.lin.dsl.issue
 import com.serchinastico.lin.dsl.rule
 

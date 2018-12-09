@@ -1,7 +1,3 @@
-repositories {
-    maven { url "https://dl.bintray.com/juanchosaravia/autodsl" }
-}
-
 apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
