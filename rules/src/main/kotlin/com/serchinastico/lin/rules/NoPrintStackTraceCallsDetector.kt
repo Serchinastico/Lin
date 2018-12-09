@@ -15,7 +15,7 @@ fun noPrintStackTraceCalls() = rule(
         Category.CORRECTNESS
     )
 ) {
-    callExpression {
+    call {
         suchThat { node ->
             val receiverType = node.receiverType ?: (return@suchThat false)
 

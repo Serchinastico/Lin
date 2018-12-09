@@ -7,158 +7,126 @@ import kotlin.reflect.KClass
 
 data class LinRule(val issueBuilder: IssueBuilder) {
 
-    private var file: LinFile? = null
-    private var switchExpression: LinSwitchExpression? = null
-    private var callExpression: LinCallExpression? = null
-    private var field: LinField? = null
+    private var lNode: LNode<*>? = null
 
     val applicableTypes: List<Class<out UElement>>
-        get() = when {
-            file != null -> listOf(UFile::class.java)
-            switchExpression != null -> listOf(USwitchExpression::class.java)
-            callExpression != null -> listOf(UCallExpression::class.java)
-            this.field != null -> listOf(UField::class.java)
-            else -> emptyList()
-        }
+        get() = lNode?.applicableType?.let { listOf(it) } ?: emptyList()
 
-    fun file(block: LinFile.() -> LinFile): LinRule {
-        file = LinFile().block()
+    fun matches(node: UElement): Boolean = lNode?.match(node) ?: false
+
+    fun file(block: LNode.LFile.() -> LNode.LFile): LinRule {
+        lNode = LNode.LFile().block()
         return this
     }
 
-    fun switch(block: LinSwitchExpression.() -> LinSwitchExpression): LinRule {
-        switchExpression = LinSwitchExpression().block()
+    fun import(block: LNode.LImport.() -> LNode.LImport): LinRule {
+        lNode = LNode.LImport().block()
         return this
     }
 
-    fun callExpression(block: LinCallExpression.() -> LinCallExpression): LinRule {
-        callExpression = LinCallExpression().block()
+    fun type(block: LNode.LType.() -> LNode.LType): LinRule {
+        lNode = LNode.LType().block()
         return this
     }
 
-    fun field(block: LinField.() -> LinField): LinRule {
-        field = LinField().block()
+    fun switch(block: LNode.LSwitchExpression.() -> LNode.LSwitchExpression): LinRule {
+        lNode = LNode.LSwitchExpression().block()
         return this
     }
 
-    fun matches(node: UElement): Boolean = when (node) {
-        is UFile -> matches(node)
-        is USwitchExpression -> matches(node)
-        is UCallExpression -> matches(node)
-        is UField -> matches(node)
-        else -> false
+    fun call(block: LNode.LCallExpression.() -> LNode.LCallExpression): LinRule {
+        lNode = LNode.LCallExpression().block()
+        return this
     }
 
-    fun matches(node: UFile): Boolean {
-        val file = file ?: return false
-
-        if (!file.anyImport(node.imports)) {
-            return false
-        }
-
-        if (!file.anyType(node.classes)) {
-            return false
-        }
-
-        return true
-    }
-
-    private fun matches(node: USwitchExpression): Boolean {
-        val switchExpression = switchExpression ?: return false
-        return switchExpression.suchThatPredicate?.invoke(node) ?: false
-    }
-
-    private fun matches(node: UCallExpression): Boolean {
-        val callExpression = callExpression ?: return false
-        return callExpression.suchThatPredicate?.invoke(node) ?: false
-    }
-
-    private fun matches(node: UField): Boolean {
-        val field = field ?: return false
-        return field.suchThatPredicate?.invoke(node) ?: false
+    fun field(block: LNode.LField.() -> LNode.LField): LinRule {
+        lNode = LNode.LField().block()
+        return this
     }
 }
 
-class LinFile {
+sealed class LNode<T : UElement> {
 
-    private val importRules: MutableList<LinImport> = mutableListOf()
-    private val typeRules: MutableList<LinType> = mutableListOf()
-    private var suchThatPredicate: ((UFile) -> Boolean)? = null
+    abstract val applicableType: Class<out T>
+    internal val children: MutableList<LNode<*>> = mutableListOf()
+    private var suchThatPredicate: ((T) -> Boolean)? = null
 
-    fun suchThat(predicate: (UFile) -> Boolean): LinFile {
+    fun match(element: UElement): Boolean {
+        val predicate = suchThatPredicate ?: { true }
+        return predicate.invoke(applicableType.cast(element)) && children.all { child ->
+            child.lookForChildren(element).any { child.match(it) }
+        }
+    }
+
+    fun <S : LNode<*>> suchThat(predicate: (T) -> Boolean): S {
         suchThatPredicate = predicate
-        return this
+        return this as S
     }
 
-    fun import(block: LinImport.() -> LinImport): LinFile {
-        importRules.add(LinImport().block())
-        return this
+    open fun lookForChildren(element: UElement): List<T> = emptyList()
+
+    class LFile : LNode<UFile>() {
+
+        fun import(block: LImport.() -> LImport): LFile {
+            children.add(LImport().block())
+            return this
+        }
+
+        fun type(block: LType.() -> LType): LFile {
+            children.add(LType().block())
+            return this
+        }
+
+        override val applicableType: Class<out UFile> = UFile::class.java
     }
 
-    fun type(block: LinType.() -> LinType): LinFile {
-        typeRules.add(LinType().block())
-        return this
-    }
+    class LImport : LNode<UImportStatement>() {
+        override val applicableType: Class<out UImportStatement> = UImportStatement::class.java
 
-    fun anyImport(imports: List<UImportStatement>): Boolean = imports.any { import ->
-        importRules.any { rule ->
-            rule.suchThatPredicate?.invoke(import) ?: false
+        override fun lookForChildren(element: UElement): List<UImportStatement> = when (element) {
+            is UFile -> element.imports
+            else -> super.lookForChildren(element)
         }
     }
 
-    fun anyType(types: List<UClass>): Boolean = types.any { type ->
-        typeRules.any { rule ->
-            rule.suchThatPredicate?.invoke(type) ?: false
+    class LType : LNode<UClass>() {
+        override val applicableType: Class<out UClass> = UClass::class.java
+
+        override fun lookForChildren(element: UElement): List<UClass> = when (element) {
+            is UFile -> element.classes
+            else -> super.lookForChildren(element)
         }
+
+        fun switch(block: LSwitchExpression.() -> LSwitchExpression): LType {
+            children.add(LSwitchExpression().block())
+            return this
+        }
+
+        fun calls(block: LCallExpression.() -> LCallExpression): LType {
+            children.add(LCallExpression().block())
+            return this
+        }
+
+        fun field(block: LField.() -> LField): LType {
+            children.add(LField().block())
+            return this
+        }
+    }
+
+    class LSwitchExpression : LNode<USwitchExpression>() {
+        override val applicableType: Class<out USwitchExpression> = USwitchExpression::class.java
+    }
+
+    class LCallExpression : LNode<UCallExpression>() {
+        override val applicableType: Class<out UCallExpression> = UCallExpression::class.java
+    }
+
+    class LField : LNode<UField>() {
+        override val applicableType: Class<out UField> = UField::class.java
     }
 }
 
 fun rule(issueBuilder: IssueBuilder, block: LinRule.() -> LinRule): LinRule = LinRule(issueBuilder).block()
-
-class LinImport {
-    var suchThatPredicate: ((UImportStatement) -> Boolean)? = null
-
-    fun suchThat(predicate: (UImportStatement) -> Boolean): LinImport {
-        suchThatPredicate = predicate
-        return this
-    }
-}
-
-class LinType {
-    var suchThatPredicate: ((UClass) -> Boolean)? = null
-
-    fun suchThat(predicate: (UClass) -> Boolean): LinType {
-        suchThatPredicate = predicate
-        return this
-    }
-}
-
-class LinSwitchExpression {
-    var suchThatPredicate: ((USwitchExpression) -> Boolean)? = null
-
-    fun suchThat(predicate: (USwitchExpression) -> Boolean): LinSwitchExpression {
-        suchThatPredicate = predicate
-        return this
-    }
-}
-
-class LinCallExpression {
-    var suchThatPredicate: ((UCallExpression) -> Boolean)? = null
-
-    fun suchThat(predicate: (UCallExpression) -> Boolean): LinCallExpression {
-        suchThatPredicate = predicate
-        return this
-    }
-}
-
-class LinField {
-    var suchThatPredicate: ((UField) -> Boolean)? = null
-
-    fun suchThat(predicate: (UField) -> Boolean): LinField {
-        suchThatPredicate = predicate
-        return this
-    }
-}
 
 fun main(args: Array<String>) {
     val detectorScope = Scope.JAVA_FILE_SCOPE
