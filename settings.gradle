@@ -1,1 +1,1 @@
-include ':app', ':dsl', ':rules'
+include ':app', ':dsl', ':rules', ':annotations', ':processor'

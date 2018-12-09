@@ -1,13 +1,14 @@
-package com.serchinastico.rules
+package com.serchinastico.lin
 
-import com.serchinastico.rules.test.LintTest
-import com.serchinastico.rules.test.LintTest.Expectation.NoErrors
-import com.serchinastico.rules.test.LintTest.Expectation.SomeError
+import com.serchinastico.lin.rules.NoDataFrameworksFromAndroidClassDetector
+import com.serchinastico.lin.test.LintTest
+import com.serchinastico.lin.test.LintTest.Expectation.NoErrors
+import com.serchinastico.lin.test.LintTest.Expectation.SomeError
 import org.junit.Test
 
 class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
 
-    override val issue = NoDataFrameworksFromAndroidClassDetector.ISSUE
+    override val issue = NoDataFrameworksFromAndroidClassDetector.issue
 
     @Test
     fun inJavaNonAndroidClass_whenFileHasFrameworkImport_detectsNoErrors() {

@@ -1,13 +1,14 @@
-package com.serchinastico.rules
+package com.serchinastico.lin
 
-import com.serchinastico.rules.test.LintTest
-import com.serchinastico.rules.test.LintTest.Expectation.NoErrors
-import com.serchinastico.rules.test.LintTest.Expectation.SomeError
+import com.serchinastico.lin.rules.NoElseInSwitchWithEnumOrSealedDetector
+import com.serchinastico.lin.test.LintTest
+import com.serchinastico.lin.test.LintTest.Expectation.NoErrors
+import com.serchinastico.lin.test.LintTest.Expectation.SomeError
 import org.junit.Test
 
 class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
 
-    override val issue = NoElseInSwitchWithEnumOrSealedDetector.ISSUE
+    override val issue = NoElseInSwitchWithEnumOrSealedDetector.issue
 
     @Test
     fun inJavaSwitchStatement_whenAllCasesAreCovered_detectsNoErrors() {

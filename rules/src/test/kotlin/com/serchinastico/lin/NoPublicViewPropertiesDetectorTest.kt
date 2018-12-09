@@ -1,13 +1,14 @@
-package com.serchinastico.rules
+package com.serchinastico.lin
 
-import com.serchinastico.rules.test.LintTest
-import com.serchinastico.rules.test.LintTest.Expectation.NoErrors
-import com.serchinastico.rules.test.LintTest.Expectation.SomeError
+import com.serchinastico.lin.rules.NoPublicViewPropertiesDetector
+import com.serchinastico.lin.test.LintTest
+import com.serchinastico.lin.test.LintTest.Expectation.NoErrors
+import com.serchinastico.lin.test.LintTest.Expectation.SomeError
 import org.junit.Test
 
 class NoPublicViewPropertiesDetectorTest : LintTest {
 
-    override val issue = NoPublicViewPropertiesDetector.ISSUE
+    override val issue = NoPublicViewPropertiesDetector.issue
 
     @Test
     fun inJavaClass_whenViewFieldIsPrivate_detectsNoErrors() {
