@@ -1,13 +1,16 @@
-apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
 
 sourceSets {
     main {
         java {
-            srcDirs += "${buildDir.absolutePath}/generated/source/kapt/main/"
+            srcDirs = ["src/main/kotlin", "${buildDir.absolutePath}/generated/source/kapt/main/"]
         }
     }
+}
+
+configurations {
+    lintChecks
 }
 
 dependencies {
@@ -25,4 +28,12 @@ dependencies {
     testCompile 'com.android.tools.lint:lint:26.2.1'
     testCompile 'com.android.tools.lint:lint-tests:26.2.1'
     testCompile 'com.android.tools:testutils:26.2.1'
+
+    lintChecks files(jar)
+}
+
+jar {
+    manifest {
+        attributes("Lint-Registry-v2": "com.serchinastico.lin.rules.LinIssueRegistry")
+    }
 }
