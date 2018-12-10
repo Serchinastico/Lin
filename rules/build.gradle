@@ -1,3 +1,4 @@
+apply plugin: 'jacoco'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
 
@@ -23,6 +24,7 @@ dependencies {
     compileOnly 'com.android.tools.lint:lint-checks:26.2.1'
 
     testCompile 'junit:junit:4.12'
+    testCompile project(":dsl")
     testCompile 'org.assertj:assertj-core:3.3.0'
     testCompile 'org.mockito:mockito-core:2.23.0'
     testCompile 'com.android.tools.lint:lint:26.2.1'
@@ -31,6 +33,8 @@ dependencies {
 
     lintChecks files(jar)
 }
+
+test.finalizedBy jacocoTestReport
 
 jar {
     manifest {
