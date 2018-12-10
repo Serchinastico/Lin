@@ -5,7 +5,7 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.TextFormat
-import com.serchinastico.lin.rules.exhaustive
+import com.serchinastico.lin.dsl.exhaustive
 
 interface LintTest {
 

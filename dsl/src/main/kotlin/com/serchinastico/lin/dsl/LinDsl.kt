@@ -128,26 +128,6 @@ sealed class LNode<T : UElement> {
 
 fun rule(issueBuilder: IssueBuilder, block: LinRule.() -> LinRule): LinRule = LinRule(issueBuilder).block()
 
-fun main(args: Array<String>) {
-    val detectorScope = Scope.JAVA_FILE_SCOPE
-
-    rule(
-        issue(
-            detectorScope,
-            "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
-                    " Android related view.",
-            "Your Android classes should not be responsible for retrieving or storing information, that should be " +
-                    "responsibility of another classes.",
-            Category.INTEROPERABILITY
-        )
-    ) {
-        file {
-            import { suchThat { it.isFrameworkLibraryImport } }
-            type { suchThat { node -> node.uastSuperTypes.any { it.isAndroidFrameworkType } } }
-        }
-    }
-}
-
 fun issue(
     scope: EnumSet<Scope>,
     description: String,

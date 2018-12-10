@@ -1,6 +1,4 @@
-apply plugin: 'java-library'
 apply plugin: 'kotlin'
-apply plugin: 'kotlin-kapt'
 
 dependencies {
     compileOnly 'com.android.tools.lint:lint:26.2.1'
