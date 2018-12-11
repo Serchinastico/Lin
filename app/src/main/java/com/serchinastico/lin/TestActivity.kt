@@ -1,3 +1,7 @@
 package com.serchinastico.lin
 
-class TestClass
+import android.view.View
+
+class TestClass {
+    lateinit var asd: String
+}

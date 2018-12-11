@@ -173,13 +173,7 @@ class RuleProcessor : AbstractProcessor() {
                         "node",
                         ClassName("org.jetbrains.uast", "UFile")
                     )
-                    .addCode(
-                        """
-                            |if (rule.matches(node)) {
-                            |   context.report(issue)
-                            |}
-                            """.trimMargin()
-                    )
+                    .addShouldReportFunction()
                     .build()
             )
             .addFunction(
@@ -189,13 +183,7 @@ class RuleProcessor : AbstractProcessor() {
                         "node",
                         ClassName("org.jetbrains.uast", "USwitchExpression")
                     )
-                    .addCode(
-                        """
-                            |if (rule.matches(node)) {
-                            |   context.report(issue)
-                            |}
-                            """.trimMargin()
-                    )
+                    .addShouldReportFunction()
                     .build()
             )
             .addFunction(
@@ -205,13 +193,7 @@ class RuleProcessor : AbstractProcessor() {
                         "node",
                         ClassName("org.jetbrains.uast", "UCallExpression")
                     )
-                    .addCode(
-                        """
-                            |if (rule.matches(node)) {
-                            |   context.report(issue)
-                            |}
-                            """.trimMargin()
-                    )
+                    .addShouldReportFunction()
                     .build()
             )
             .addFunction(
@@ -221,16 +203,19 @@ class RuleProcessor : AbstractProcessor() {
                         "node",
                         ClassName("org.jetbrains.uast", "UField")
                     )
-                    .addCode(
-                        """
-                            |if (rule.matches(node)) {
-                            |   context.report(issue)
-                            |}
-                            """.trimMargin()
-                    )
+                    .addShouldReportFunction()
                     .build()
             )
             .build()
+
+    private fun FunSpec.Builder.addShouldReportFunction(): FunSpec.Builder =
+        addCode(
+            """
+                |if (rule.shouldReport(node)) {
+                |   context.report(issue)
+                |}
+            """.trimMargin()
+        )
 
     private fun ensureOutputDirectoryExists(generatedSourcesRoot: String): Boolean =
         if (generatedSourcesRoot.isEmpty()) {
