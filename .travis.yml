@@ -9,7 +9,7 @@ android:
     - extra
 
 script:
-    - ./gradlew check test
+    - ./gradlew test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
