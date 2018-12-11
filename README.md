@@ -4,6 +4,7 @@
 
 [![Build Status](https://travis-ci.org/Serchinastico/Lin.svg?branch=master)](https://travis-ci.org/Serchinastico/Lin)
 [![codecov](https://codecov.io/gh/Serchinastico/Lin/branch/master/graph/badge.svg)](https://codecov.io/gh/Serchinastico/Lin)
+[![jitpack](https://jitpack.io/v/Serchinastico/Lin.svg)](https://jitpack.io/#Serchinastico/Lin)
 
 Lin is an Android Lint tool made simpler. It has two different goals:
 
