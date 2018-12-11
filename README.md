@@ -1,4 +1,4 @@
-![LIN](./readme/logo.png)
+<p align="center"><img src ="./readme/logo.png" /></p>
 
 ---------------
 
