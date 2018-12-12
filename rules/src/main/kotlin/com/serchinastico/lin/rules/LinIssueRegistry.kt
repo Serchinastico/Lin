@@ -8,6 +8,7 @@ class LinIssueRegistry : IssueRegistry() {
         NoDataFrameworksFromAndroidClassDetector.issue,
         NoElseInSwitchWithEnumOrSealedDetector.issue,
         NoPrintStackTraceCallsDetector.issue,
-        NoPublicViewPropertiesDetector.issue
+        NoPublicViewPropertiesDetector.issue,
+        NoSetOnClickListenerCallsDetector.issue
     )
 }

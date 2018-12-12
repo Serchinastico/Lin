@@ -12,7 +12,7 @@ data class LinRule(val issueBuilder: IssueBuilder) {
     val applicableTypes: List<Class<out UElement>>
         get() = lNode?.applicableType?.let { listOf(it) } ?: emptyList()
 
-    fun matches(node: UElement): Boolean = lNode?.match(node) ?: false
+    fun shouldReport(node: UElement): Boolean = lNode?.match(node) ?: false
 
     fun file(block: LNode.LFile.() -> LNode.LFile): LinRule {
         lNode = LNode.LFile().block()
