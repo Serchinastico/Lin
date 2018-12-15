@@ -1,6 +1,15 @@
 package com.serchinastico.lin.dsl
 
 import org.jetbrains.uast.*
+import org.reflections.Reflections
+import kotlin.reflect.KCallable
+import kotlin.reflect.KClass
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.KVariance
+import kotlin.reflect.full.createType
+import kotlin.reflect.full.functions
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.memberProperties
 
 sealed class LinNode {
     object File : LinNode()
@@ -35,7 +44,11 @@ val allMappings: AllMappings = mutableMapOf(
     (LinNode.File to LinNode.Type) to mapping<UFile> { it.classes },
     (LinNode.Type to LinNode.Type) to mapping<UClass> { it.innerClasses.toList() },
     (LinNode.Type to LinNode.Field) to mapping<UClass> { it.fields.toList() },
-    (LinNode.Type to LinNode.Method) to mapping<UClass> { it.methods.toList() }
+    (LinNode.Type to LinNode.Method) to mapping<UClass> { it.methods.toList() },
+    (LinNode.Method to LinNode.CallExpression) to mapping<UMethod> { method ->
+        val body = method.uastBody ?: return@mapping emptyList()
+        body.allSubElements { it is UCallExpression }
+    }
 )
 
 fun Map<LinNodePair, *>.filterNodePairs(
@@ -76,6 +89,31 @@ fun expand(): AllMappings {
     return processedNodePairs
 }
 
+data class ElementMapping(val klass: KClass<out UElement>, val children: List<String>)
+
+val KCallable<*>.returnsUElementOrListOfUElements: Boolean
+    get() = returnType.isSubtypeOf(uElementType) ||
+            returnType.isSubtypeOf(nullableUElementType) ||
+            returnType.isSubtypeOf(listOfUElementType)
+
+val KCallable<*>.returnUElementKClass: KClass<UElement>?
+    get() = when {
+        returnType.isSubtypeOf(uElementType) -> returnType.classifier as? KClass<UElement>
+        returnType.isSubtypeOf(nullableUElementType) -> returnType.classifier as? KClass<UElement>
+        returnType.isSubtypeOf(listOfUElementType) -> returnType.arguments.first().type?.classifier as? KClass<UElement>
+        else -> null
+    }
+
+val KClass<*>.isJavaOrKotlinSpecific: Boolean
+    get() {
+        val name = qualifiedName?.toLowerCase() ?: return false
+        return name.contains("java") || name.contains("kotlin") || name.contains("psi")
+    }
+
+val uElementType = UElement::class.createType()
+val nullableUElementType = UElement::class.createType(nullable = true)
+val listOfUElementType = List::class.createType(listOf(KTypeProjection(KVariance.INVARIANT, uElementType)))
+
 fun main(args: Array<String>) {
     // 1. Create a map of all possible relationships by expanding each one and seeing if there are new ones.
     // 2. Create types with all their DSL functions
@@ -86,4 +124,52 @@ fun main(args: Array<String>) {
     // 4. NO NEED because with step 1 we already have them all, be careful with A -> A BTW
     println("STARTING: $allMappings")
     println("EXPANDED: ${expand()}")
+
+    val reflections = Reflections("org.jetbrains.uast")
+
+    val klassesToProcess = mutableListOf<KClass<out UElement>>(UFile::class)
+    val processedKlasses = mutableSetOf<KClass<out UElement>>()
+    val processedMappings = mutableListOf<ElementMapping>()
+
+    while (klassesToProcess.isNotEmpty()) {
+        val elementKlass = klassesToProcess.removeAt(0)
+
+        if (processedKlasses.contains(elementKlass)) {
+            continue
+        }
+
+        if (!elementKlass.isAbstract) {
+            continue
+        }
+
+        val subtypes = reflections.getSubTypesOf(elementKlass.java)
+        subtypes.forEach {
+            if (!it.kotlin.isJavaOrKotlinSpecific) {
+                klassesToProcess.add(it.kotlin)
+            }
+        }
+
+        val children = mutableListOf<String>()
+
+        elementKlass.memberProperties.forEach { property ->
+            val returnType = property.returnUElementKClass
+            if (returnType != null && !returnType.isJavaOrKotlinSpecific) {
+                klassesToProcess.add(returnType)
+                children.add(property.name)
+            }
+        }
+
+        elementKlass.functions.forEach { function ->
+            val returnType = function.returnUElementKClass
+            if (returnType != null && !returnType.isJavaOrKotlinSpecific && function.parameters.isEmpty()) {
+                klassesToProcess.add(returnType)
+                children.add(function.name)
+            }
+        }
+
+        processedKlasses.add(elementKlass)
+        processedMappings.add(ElementMapping(elementKlass, children))
+    }
+
+    println("reflection: $processedMappings")
 }

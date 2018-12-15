@@ -16,6 +16,26 @@ import org.jetbrains.uast.kotlin.KotlinUClass
 
 val Any?.exhaustive get() = Unit
 
+fun UExpression.allSubElements(filter: (UElement) -> Boolean): List<UElement> {
+    val thisNode = if (filter(this)) listOf(this) else emptyList()
+    return when (this) {
+        is UArrayAccessExpression -> thisNode +
+                receiver.allSubElements(filter) +
+                indices.flatMap { it.allSubElements(filter) }
+        is UBlockExpression -> thisNode + expressions.flatMap { it.allSubElements(filter) }
+        is UCallExpression -> thisNode + valueArguments.flatMap { it.allSubElements(filter) }
+        is UExpressionList -> thisNode + expressions.flatMap { it.allSubElements(filter) }
+        is ULoopExpression -> thisNode + body.allSubElements(filter)
+        is UPolyadicExpression -> thisNode + operands.flatMap { it.allSubElements(filter) }
+        is USwitchExpression -> thisNode +
+                body.allSubElements(filter) +
+                (this.expression?.allSubElements(filter) ?: emptyList())
+        is UThrowExpression -> thisNode + thrownExpression.allSubElements(filter)
+        is UWhileExpression -> thisNode + condition.allSubElements(filter) + body.allSubElements(filter)
+        else -> thisNode
+    }
+}
+
 fun JavaContext.report(issue: Issue) {
     report(issue, Location.create(file), issue.getBriefDescription(TextFormat.TEXT))
 }
