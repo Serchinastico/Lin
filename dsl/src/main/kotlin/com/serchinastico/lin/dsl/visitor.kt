@@ -12,13 +12,11 @@ data class LinVisitor(val rule: LinRule) : UastVisitor {
     }
     private var currentNode: TreeNode? = null
 
-    val shouldReport: Boolean
-        get() {
-            val root =
-                currentNode ?: throw RuntimeException("Always call node.accept(visitor) to initialize the visitor")
+    val shouldReport: Boolean by lazy {
+        val root = currentNode ?: throw NoVisitCalled()
 
-            return rule.root.matches(root)
-        }
+        rule.root.matches(root)
+    }
 
     override fun visitElement(node: UElement): Boolean {
         if (!validUElementClassNames.any { it.isSuperclassOf(node::class) }) {
@@ -38,4 +36,6 @@ data class LinVisitor(val rule: LinRule) : UastVisitor {
 
         currentNode = currentNode?.parent ?: currentNode
     }
+
+    class NoVisitCalled : java.lang.RuntimeException("Always call node.accept(visitor) to initialize the visitor")
 }
