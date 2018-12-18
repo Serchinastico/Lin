@@ -95,16 +95,19 @@ private val Counters.allQualifiersMeetRequirements: Boolean
         }
     }
 
+private val matchesMemoizedValues = mutableMapOf<Triple<LinNode<UElement>, UElement, Counters>, Boolean>()
 private fun LinNode<UElement>.matches(
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>
-): Boolean = quantifier.let { quantifier ->
-    when (quantifier) {
-        Quantifier.All -> ruleMatchesAll(this, element)
-        Quantifier.Any -> ruleMatchesAny(this, element)
-        is Quantifier.Times -> ruleMatchTimes(this, element, quantifierCounters, quantifier)
-        is Quantifier.MoreThan -> ruleMatchMoreThan(this, element)
-        is Quantifier.LessThan -> ruleMatchLessThan(this, element, quantifierCounters, quantifier)
+): Boolean = matchesMemoizedValues.getOrPut(Triple(this, element, quantifierCounters)) {
+    quantifier.let { quantifier ->
+        return when (quantifier) {
+            Quantifier.All -> ruleMatchesAll(this, element)
+            Quantifier.Any -> ruleMatchesAny(this, element)
+            is Quantifier.Times -> ruleMatchTimes(this, element, quantifierCounters, quantifier)
+            is Quantifier.MoreThan -> ruleMatchMoreThan(this, element)
+            is Quantifier.LessThan -> ruleMatchLessThan(this, element, quantifierCounters, quantifier)
+        }
     }
 }
 
