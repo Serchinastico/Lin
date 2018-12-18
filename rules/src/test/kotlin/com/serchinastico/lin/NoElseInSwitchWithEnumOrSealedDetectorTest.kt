@@ -32,8 +32,8 @@ class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
                 |     One, Two, Three, Four, Five
                 |   }
                 |}
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -58,8 +58,8 @@ class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
                 |     One, Two, Three, Four, Five
                 |   }
                 |}
-            """.trimMargin()
-        ).inJava toHave SomeError
+            """.inJava
+        ) toHave SomeError("src/foo/TestClass.java")
     }
 
     @Test
@@ -83,8 +83,8 @@ class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
                 |     One, Two, Three, Four, Five
                 |   }
                 |}
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -109,8 +109,8 @@ class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
                 |     One, Two, Three, Four, Five
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave NoErrors
+            """.inKotlin
+        ) toHave NoErrors
     }
 
     @Test
@@ -135,8 +135,8 @@ class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
                 |     One, Two, Three, Four, Five
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 
 
@@ -159,8 +159,8 @@ class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
                 |     One, Two, Three, Four, Five
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 
     @Test
@@ -186,7 +186,7 @@ class NoElseInSwitchWithEnumOrSealedDetectorTest : LintTest {
                 |     object Five: NumberUpToFive()
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 }

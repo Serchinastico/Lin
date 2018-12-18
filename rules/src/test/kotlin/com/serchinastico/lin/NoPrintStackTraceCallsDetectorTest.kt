@@ -23,8 +23,8 @@ class NoPrintStackTraceCallsDetectorTest : LintTest {
                 |
                 |   private void printStackTrace() {}
                 |}
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -38,8 +38,8 @@ class NoPrintStackTraceCallsDetectorTest : LintTest {
                 |       new TestClass().printStackTrace();
                 |   }
                 |}
-            """.trimMargin()
-        ).inJava toHave SomeError
+            """.inJava
+        ) toHave SomeError("src/foo/TestClass.java")
     }
 
     @Test
@@ -53,8 +53,8 @@ class NoPrintStackTraceCallsDetectorTest : LintTest {
                 |       new java.lang.Throwable().printStackTrace();
                 |   }
                 |}
-            """.trimMargin()
-        ).inJava toHave SomeError
+            """.inJava
+        ) toHave SomeError("src/foo/TestClass.java")
     }
 
     @Test
@@ -70,8 +70,8 @@ class NoPrintStackTraceCallsDetectorTest : LintTest {
                 |
                 |   private fun printStackTrace() {}
                 |}
-            """.trimMargin()
-        ).inKotlin toHave NoErrors
+            """.inKotlin
+        ) toHave NoErrors
     }
 
     @Test
@@ -85,8 +85,8 @@ class NoPrintStackTraceCallsDetectorTest : LintTest {
                 |       TestClass().printStackTrace();
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 
     @Test
@@ -100,7 +100,7 @@ class NoPrintStackTraceCallsDetectorTest : LintTest {
                 |       kotlin.Throwable().printStackTrace();
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 }

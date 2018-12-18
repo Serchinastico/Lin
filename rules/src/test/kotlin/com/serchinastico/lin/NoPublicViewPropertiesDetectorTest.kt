@@ -21,8 +21,8 @@ class NoPublicViewPropertiesDetectorTest : LintTest {
                 |class TestClass {
                 |   private View view;
                 |}
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -36,8 +36,8 @@ class NoPublicViewPropertiesDetectorTest : LintTest {
                 |class TestClass {
                 |   View view;
                 |}
-            """.trimMargin()
-        ).inJava toHave SomeError
+            """.inJava
+        ) toHave SomeError("src/foo/TestClass.java")
     }
 
 
@@ -52,8 +52,8 @@ class NoPublicViewPropertiesDetectorTest : LintTest {
                 |class TestClass {
                 |   private val view: View = View()
                 |}
-            """.trimMargin()
-        ).inKotlin toHave NoErrors
+            """.inKotlin
+        ) toHave NoErrors
     }
 
     @Test
@@ -67,7 +67,7 @@ class NoPublicViewPropertiesDetectorTest : LintTest {
                 |class TestClass {
                 |   public val view: View = View(null)
                 |}
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 }

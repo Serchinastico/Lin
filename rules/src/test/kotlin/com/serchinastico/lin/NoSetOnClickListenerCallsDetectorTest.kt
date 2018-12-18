@@ -25,8 +25,8 @@ class NoSetOnClickListenerCallsDetectorTest : LintTest {
                 |       view.doNotSetOnClickListener(this);
                 |   }
                 |}
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -44,8 +44,8 @@ class NoSetOnClickListenerCallsDetectorTest : LintTest {
                 |       view.setOnClickListener(this);
                 |   }
                 |}
-            """.trimMargin()
-        ).inJava toHave SomeError
+            """.inJava
+        ) toHave SomeError("src/foo/TestClass.java")
     }
 
     @Test
@@ -61,8 +61,8 @@ class NoSetOnClickListenerCallsDetectorTest : LintTest {
                 |
                 |   private void setOnClickListener(View.OnClickListener listener) {}
                 |}
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -80,8 +80,8 @@ class NoSetOnClickListenerCallsDetectorTest : LintTest {
                 |       view.doNotSetOnClickListener(this)
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave NoErrors
+            """.inKotlin
+        ) toHave NoErrors
     }
 
 
@@ -100,8 +100,8 @@ class NoSetOnClickListenerCallsDetectorTest : LintTest {
                 |       view.setOnClickListener(this)
                 |   }
                 |}
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 
     @Test
@@ -117,7 +117,7 @@ class NoSetOnClickListenerCallsDetectorTest : LintTest {
                 |
                 |   private fun setOnClickListener(listener: View.OnClickListener) {}
                 |}
-            """.trimMargin()
-        ).inKotlin toHave NoErrors
+            """.inKotlin
+        ) toHave NoErrors
     }
 }

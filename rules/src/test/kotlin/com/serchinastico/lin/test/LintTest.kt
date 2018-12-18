@@ -1,7 +1,7 @@
 package com.serchinastico.lin.test
 
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest.java
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kotlin
+import com.android.tools.lint.checks.infrastructure.TestFiles.java
+import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.TextFormat
@@ -11,37 +11,36 @@ interface LintTest {
 
     val issue: Issue
 
-    data class SnippetBuilder(val issue: Issue, val snippet: String) {
+    data class Snippet(val code: String, val language: Language)
 
-        val inJava: ExpectBuilder
-            get() = ExpectBuilder(issue, Language.Java, snippet)
-        val inKotlin: ExpectBuilder
-            get() = ExpectBuilder(issue, Language.Kotlin, snippet)
-    }
+    val String.inJava: Snippet get() = Snippet(this.trimMargin(), Language.Java)
+    val String.inKotlin: Snippet get() = Snippet(this.trimMargin(), Language.Kotlin)
 
-    data class ExpectBuilder(val issue: Issue, val language: Language, val snippet: String) {
+    data class ExpectBuilder(val issue: Issue, val snippets: List<Snippet>) {
         infix fun toHave(expectation: Expectation) {
             val result = lint()
                 .files(
-                    when (language) {
-                        Language.Java -> java(snippet)
-                        Language.Kotlin -> kotlin(snippet)
-                    }
+                    *snippets.map {
+                        when (it.language) {
+                            Language.Java -> java(it.code)
+                            Language.Kotlin -> kotlin(it.code)
+                        }
+                    }.toTypedArray()
                 )
                 .issues(issue)
                 .run()
 
             when (expectation) {
                 Expectation.NoErrors -> result.expectClean()
-                Expectation.SomeWarning -> result.expect(
+                is Expectation.SomeWarning -> result.expect(
                     """
-                        |src/foo/TestClass.${language.extension}: Warning: ${issue.getBriefDescription(TextFormat.TEXT)} [${issue.id}]
+                        |${expectation.fileName}: Warning: ${issue.getBriefDescription(TextFormat.TEXT)} [${issue.id}]
                         |0 errors, 1 warnings
                     """.trimMargin()
                 )
-                Expectation.SomeError -> result.expect(
+                is Expectation.SomeError -> result.expect(
                     """
-                        |src/foo/TestClass.${language.extension}: Error: ${issue.getBriefDescription(TextFormat.TEXT)} [${issue.id}]
+                        |${expectation.fileName}: Error: ${issue.getBriefDescription(TextFormat.TEXT)} [${issue.id}]
                         |1 errors, 0 warnings
                     """.trimMargin()
                 )
@@ -50,21 +49,16 @@ interface LintTest {
 
     }
 
-    fun expect(snippet: String): SnippetBuilder = SnippetBuilder(issue, snippet)
+    fun expect(snippet: Snippet): ExpectBuilder = ExpectBuilder(issue, listOf(snippet))
+    fun expect(vararg snippets: Snippet): ExpectBuilder = ExpectBuilder(issue, snippets.toList())
 
     enum class Language {
-        Java, Kotlin;
-
-        val extension: String
-            get() = when (this) {
-                Java -> "java"
-                Kotlin -> "kt"
-            }
+        Java, Kotlin
     }
 
     sealed class Expectation {
         object NoErrors : Expectation()
-        object SomeWarning : Expectation()
-        object SomeError : Expectation()
+        data class SomeWarning(val fileName: String) : Expectation()
+        data class SomeError(val fileName: String) : Expectation()
     }
 }

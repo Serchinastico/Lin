@@ -17,8 +17,8 @@ class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
                 |package foo;
                 |
                 |import com.squareup.retrofit2.*;
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -32,8 +32,8 @@ class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
                 |import android.view.View;
                 |
                 |public class TestClass extends Activity {}
-            """.trimMargin()
-        ).inJava toHave NoErrors
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -48,8 +48,8 @@ class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
                 |import com.squareup.retrofit2.*;
                 |
                 |public class TestClass extends Activity {}
-            """.trimMargin()
-        ).inJava toHave SomeError
+            """.inJava
+        ) toHave SomeError("src/foo/TestClass.java")
     }
 
     @Test
@@ -59,8 +59,8 @@ class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
                 |package foo
                 |
                 |import com.squareup.retrofit2.*
-            """.trimMargin()
-        ).inKotlin toHave NoErrors
+            """.inKotlin
+        ) toHave NoErrors
     }
 
     @Test
@@ -74,8 +74,8 @@ class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
                 |import android.view.View
                 |
                 |class TestClass : Activity()
-            """.trimMargin()
-        ).inKotlin toHave NoErrors
+            """.inKotlin
+        ) toHave NoErrors
     }
 
     @Test
@@ -90,7 +90,7 @@ class NoDataFrameworksFromAndroidClassDetectorTest : LintTest {
                 |import com.squareup.retrofit2.*;
                 |
                 |class TestClass : Activity()
-            """.trimMargin()
-        ).inKotlin toHave SomeError
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 }
