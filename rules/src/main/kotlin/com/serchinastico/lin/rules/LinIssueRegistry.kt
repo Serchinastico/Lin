@@ -9,6 +9,7 @@ class LinIssueRegistry : IssueRegistry() {
         NoElseInSwitchWithEnumOrSealedDetector.issue,
         NoPrintStackTraceCallsDetector.issue,
         NoPublicViewPropertiesDetector.issue,
-        NoSetOnClickListenerCallsDetector.issue
+        NoSetOnClickListenerCallsDetector.issue,
+        NoMoreThanOneGsonInstanceDetector.issue
     )
 }
