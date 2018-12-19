@@ -56,12 +56,13 @@ private fun matches(
 ): Boolean {
     // We finished processing rules and found a match, we succeeded as long as quantifiers match their requirements
     if (ruleNodes.isEmpty()) {
-        return quantifierCounters.allQualifiersMeetRequirements
+        return quantifierCounters.allQualifiersMeetRequirements(ruleNodes)
     }
 
-    // We don't have more code and there are still rules that are not matching, we failed
+    // We don't have more code and there are still rules, see if there are missing matches
     if (codeNodes.isEmpty()) {
-        return false
+        return ruleNodes.none { it.quantifier == Quantifier.Any } &&
+                quantifierCounters.allQualifiersMeetRequirements(ruleNodes)
     }
 
     val headCodeNode = codeNodes.first()
@@ -84,16 +85,15 @@ private fun matches(
             matches(tailCodeNodes, ruleNodes, quantifierCounters)))
 }
 
-private val Counters.allQualifiersMeetRequirements: Boolean
-    get() = all { entry ->
-        val quantifier = entry.key
-        when (quantifier) {
-            Quantifier.All, Quantifier.Any -> true
-            is Quantifier.Times -> quantifier.times == entry.value
-            is Quantifier.MoreThan -> quantifier.times > entry.value
-            is Quantifier.LessThan -> quantifier.times < entry.value
-        }
+private fun Counters.allQualifiersMeetRequirements(rules: List<LinNode<UElement>>): Boolean = rules.all { rule ->
+    val quantifier = rule.quantifier
+    when (quantifier) {
+        Quantifier.All, Quantifier.Any -> true
+        is Quantifier.Times -> getCount(quantifier) == quantifier.times
+        is Quantifier.MoreThan -> getCount(quantifier) > quantifier.times
+        is Quantifier.LessThan -> getCount(quantifier) < quantifier.times
     }
+}
 
 private val matchesMemoizedValues = mutableMapOf<Triple<LinNode<UElement>, UElement, Counters>, Boolean>()
 private fun LinNode<UElement>.matches(

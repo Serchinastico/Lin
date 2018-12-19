@@ -10,9 +10,16 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
 
     override val issue = NoMoreThanOneGsonInstanceDetector.issue
 
+    private val gsonLibrary =
+        """|package com.google.gson
+           |
+           |class Gson
+        """.inKotlin
+
     @Test
     fun inJavaClass_whenGsonIsNotInstantiated_detectsNoErrors() {
         expect(
+            gsonLibrary,
             """
                 |package foo;
                 |
@@ -28,6 +35,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
     @Test
     fun inJavaClass_whenGsonIsInstantiatedOnce_detectsNoErrors() {
         expect(
+            gsonLibrary,
             """
                 |package foo;
                 |
@@ -45,6 +53,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
     @Test
     fun inJavaClass_whenGsonIsInstantiatedTwice_detectsError() {
         expect(
+            gsonLibrary,
             """
                 |package foo;
                 |
@@ -63,6 +72,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
     @Test
     fun inJavaClass_whenGsonIsInstantiatedTwiceInDifferentFiles_detectsErrors() {
         expect(
+            gsonLibrary,
             """
                 |package foo;
                 |
@@ -91,6 +101,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
     @Test
     fun inKotlinClass_whenGsonIsNotInstantiated_detectsNoErrors() {
         expect(
+            gsonLibrary,
             """
                 |package foo
                 |
@@ -106,6 +117,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
     @Test
     fun inKotlinClass_whenGsonIsInstantiatedOnce_detectsNoErrors() {
         expect(
+            gsonLibrary,
             """
                 |package foo
                 |
@@ -123,6 +135,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
     @Test
     fun inKotlinClass_whenGsonIsInstantiatedTwice_detectsError() {
         expect(
+            gsonLibrary,
             """
                 |package foo
                 |
@@ -130,8 +143,8 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
                 |
                 |class TestClass {
                 |   public fun main(args: Array<String>) {
-                |       Gson()
-                |       Gson()
+                |       val gson1 = Gson()
+                |       val gson2 = Gson()
                 |   }
                 |}
             """.inKotlin
@@ -141,6 +154,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
     @Test
     fun inKotlinClass_whenGsonIsInstantiatedTwiceInTwoFiles_detectsErrors() {
         expect(
+            gsonLibrary,
             """
                 |package foo
                 |

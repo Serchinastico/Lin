@@ -3,7 +3,7 @@ package com.serchinastico.lin.rules
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Rule
-import com.serchinastico.lin.dsl.Quantifier
+import com.serchinastico.lin.dsl.Quantifier.MoreThan
 import com.serchinastico.lin.dsl.issue
 import com.serchinastico.lin.dsl.rule
 import org.jetbrains.uast.util.isConstructorCall
@@ -21,12 +21,10 @@ fun noMoreThanOneGsonInstance() = rule(
         Category.PERFORMANCE
     )
 ) {
-    callExpression(quantifier = Quantifier.MoreThan(1)) {
+    callExpression(quantifier = MoreThan(1)) {
         suchThat { node ->
-            val classReference = node.classReference ?: return@suchThat false
-            val resolvedName = classReference.resolvedName ?: return@suchThat false
-
-            node.isConstructorCall() && resolvedName == "com.google.gson.Gson"
+            val returnTypeCanonicalName = node.returnType?.canonicalText ?: return@suchThat false
+            node.isConstructorCall() && returnTypeCanonicalName == "com.google.gson.Gson"
         }
     }
 }
