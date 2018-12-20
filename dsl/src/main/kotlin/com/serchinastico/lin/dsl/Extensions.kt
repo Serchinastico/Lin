@@ -1,7 +1,7 @@
 package com.serchinastico.lin.dsl
 
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.TextFormat
 import com.intellij.lang.Language
@@ -16,7 +16,7 @@ import org.jetbrains.uast.kotlin.KotlinUClass
 
 val Any?.exhaustive get() = Unit
 
-fun JavaContext.report(issue: Issue) {
+fun Context.report(issue: Issue) {
     report(issue, Location.create(file), issue.getBriefDescription(TextFormat.TEXT))
 }
 

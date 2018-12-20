@@ -5,21 +5,32 @@ import org.jetbrains.uast.*
 import java.util.*
 import kotlin.reflect.KClass
 
-data class LinRule(val issueBuilder: IssueBuilder, val root: LinNode<UElement>) {
+fun detector(
+    issueBuilder: IssueBuilder,
+    ruleSet: RuleSet
+): LinDetector = LinDetector(issueBuilder, ruleSet.rules)
+
+fun detector(
+    issueBuilder: IssueBuilder,
+    block: LinRule.File.() -> LinRule<*>
+): LinDetector = LinDetector(issueBuilder, listOf(LinRule.File().block()))
+
+data class LinDetector(val issueBuilder: IssueBuilder, val roots: List<LinRule<UElement>>) {
     val applicableTypes: List<Class<out UElement>> = listOf(UFile::class.java)
 }
 
-fun rule(issueBuilder: IssueBuilder, block: LinNode.File.() -> LinNode<*>): LinRule =
-    LinRule(issueBuilder, LinNode.File().block())
+data class RuleSet(val rules: List<LinRule<*>>) {
+    companion object {
+        fun anyOf(vararg rules: LinRule<*>) = RuleSet(rules.toList())
+    }
+}
 
 fun issue(
     scope: EnumSet<Scope>,
     description: String,
     explanation: String,
     category: Category
-): IssueBuilder {
-    return IssueBuilder(scope, description, explanation, category)
-}
+): IssueBuilder = IssueBuilder(scope, description, explanation, category)
 
 data class IssueBuilder(
     val scope: EnumSet<Scope>,
@@ -41,321 +52,464 @@ data class IssueBuilder(
         )
 }
 
-sealed class LinNode<out T : UElement>(val elementType: KClass<out T>) {
+sealed class Quantifier {
+    object All : Quantifier()
+    object Any : Quantifier()
+    data class Times(val times: Int) : Quantifier()
+    data class AtMost(val times: Int) : Quantifier()
+    data class AtLeast(val times: Int) : Quantifier()
 
-    var children = mutableListOf<LinNode<*>>()
+    companion object {
+        val all = All
+        val any = Any
+        fun times(times: Int) = Times(times)
+        fun atMost(times: Int) = AtMost(times)
+        fun atLeast(times: Int) = AtLeast(times)
+        fun lessThan(times: Int) = AtMost(times - 1)
+        fun moreThan(times: Int) = AtLeast(times + 1)
+        val none = times(0)
+    }
+}
+
+fun file(quantifier: Quantifier = Quantifier.Any, block: LinRule.File.() -> LinRule<UFile>) =
+    LinRule.File().block().also { it.quantifier = quantifier }
+
+sealed class LinRule<out T : UElement>(val elementType: KClass<out T>) {
+
+    var children = mutableListOf<LinRule<*>>()
     var reportingPredicate: (UElement) -> Boolean = { true }
+    var quantifier: Quantifier = Quantifier.Any
 
-    fun suchThat(predicate: (T) -> Boolean): LinNode<T> {
+    fun suchThat(predicate: (T) -> Boolean): LinRule<T> {
         reportingPredicate = { predicate(it as T) }
         return this
     }
 
-    fun import(block: Import.() -> LinNode<UImportStatement>): LinNode<T> {
-        children.add(Import().block())
+    fun import(
+        quantifier: Quantifier = Quantifier.Any,
+        block: Import.() -> LinRule<UImportStatement>
+    ): LinRule<T> {
+        children.add(Import().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun declaration(block: Declaration.() -> LinNode<UDeclaration>): LinNode<T> {
-        children.add(Declaration().block())
+    fun declaration(
+        quantifier: Quantifier = Quantifier.Any,
+        block: Declaration.() -> LinRule<UDeclaration>
+    ): LinRule<T> {
+        children.add(Declaration().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun type(block: LinNode.Type.() -> LinNode<UClass>): LinNode<T> {
-        children.add(LinNode.Type().block())
+    fun type(quantifier: Quantifier = Quantifier.Any, block: LinRule.Type.() -> LinRule<UClass>): LinRule<T> {
+        children.add(LinRule.Type().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun initializer(block: LinNode.Initializer.() -> LinNode<UClassInitializer>): LinNode<T> {
-        children.add(LinNode.Initializer().block())
+    fun initializer(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.Initializer.() -> LinRule<UClassInitializer>
+    ): LinRule<T> {
+        children.add(LinRule.Initializer().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun method(block: LinNode.Method.() -> LinNode<UMethod>): LinNode<T> {
-        children.add(LinNode.Method().block())
+    fun method(quantifier: Quantifier = Quantifier.Any, block: LinRule.Method.() -> LinRule<UMethod>): LinRule<T> {
+        children.add(LinRule.Method().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun variable(block: LinNode.Variable.() -> LinNode<UVariable>): LinNode<T> {
-        children.add(LinNode.Variable().block())
+    fun variable(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.Variable.() -> LinRule<UVariable>
+    ): LinRule<T> {
+        children.add(LinRule.Variable().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun parameter(block: LinNode.Parameter.() -> LinNode<UParameter>): LinNode<T> {
-        children.add(LinNode.Parameter().block())
+    fun parameter(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.Parameter.() -> LinRule<UParameter>
+    ): LinRule<T> {
+        children.add(LinRule.Parameter().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun field(block: LinNode.Field.() -> LinNode<UField>): LinNode<T> {
-        children.add(LinNode.Field().block())
+    fun field(quantifier: Quantifier = Quantifier.Any, block: LinRule.Field.() -> LinRule<UField>): LinRule<T> {
+        children.add(LinRule.Field().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun localVariable(block: LinNode.LocalVariable.() -> LinNode<ULocalVariable>): LinNode<T> {
-        children.add(LinNode.LocalVariable().block())
+    fun localVariable(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.LocalVariable.() -> LinRule<ULocalVariable>
+    ): LinRule<T> {
+        children.add(LinRule.LocalVariable().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun enumConstant(block: LinNode.EnumConstant.() -> LinNode<UEnumConstant>): LinNode<T> {
-        children.add(LinNode.EnumConstant().block())
+    fun enumConstant(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.EnumConstant.() -> LinRule<UEnumConstant>
+    ): LinRule<T> {
+        children.add(LinRule.EnumConstant().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun annotation(block: LinNode.Annotation.() -> LinNode<UAnnotation>): LinNode<T> {
-        children.add(LinNode.Annotation().block())
+    fun annotation(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.Annotation.() -> LinRule<UAnnotation>
+    ): LinRule<T> {
+        children.add(LinRule.Annotation().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun expression(block: LinNode.Expression.() -> LinNode<UExpression>): LinNode<T> {
-        children.add(LinNode.Expression().block())
+    fun expression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.Expression.() -> LinRule<UExpression>
+    ): LinRule<T> {
+        children.add(LinRule.Expression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun labeledExpression(block: LinNode.LabeledExpression.() -> LinNode<ULabeledExpression>): LinNode<T> {
-        children.add(LinNode.LabeledExpression().block())
+    fun labeledExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.LabeledExpression.() -> LinRule<ULabeledExpression>
+    ): LinRule<T> {
+        children.add(LinRule.LabeledExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun declarationsExpression(block: LinNode.DeclarationsExpression.() -> LinNode<UDeclarationsExpression>): LinNode<T> {
-        children.add(LinNode.DeclarationsExpression().block())
+    fun declarationsExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.DeclarationsExpression.() -> LinRule<UDeclarationsExpression>
+    ): LinRule<T> {
+        children.add(LinRule.DeclarationsExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun blockExpression(block: LinNode.BlockExpression.() -> LinNode<UBlockExpression>): LinNode<T> {
-        children.add(LinNode.BlockExpression().block())
+    fun blockExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.BlockExpression.() -> LinRule<UBlockExpression>
+    ): LinRule<T> {
+        children.add(LinRule.BlockExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
     fun qualifiedReferenceExpression(
-        block: LinNode.QualifiedReferenceExpression.() -> LinNode<UQualifiedReferenceExpression>
-    ): LinNode<T> {
-        children.add(LinNode.QualifiedReferenceExpression().block())
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.QualifiedReferenceExpression.() -> LinRule<UQualifiedReferenceExpression>
+    ): LinRule<T> {
+        children.add(LinRule.QualifiedReferenceExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
     fun simpleNameReferenceExpression(
-        block: LinNode.SimpleNameReferenceExpression.() -> LinNode<USimpleNameReferenceExpression>
-    ): LinNode<T> {
-        children.add(LinNode.SimpleNameReferenceExpression().block())
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.SimpleNameReferenceExpression.() -> LinRule<USimpleNameReferenceExpression>
+    ): LinRule<T> {
+        children.add(LinRule.SimpleNameReferenceExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun typeReferenceExpression(block: LinNode.TypeReferenceExpression.() -> LinNode<UTypeReferenceExpression>): LinNode<T> {
-        children.add(LinNode.TypeReferenceExpression().block())
+    fun typeReferenceExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.TypeReferenceExpression.() -> LinRule<UTypeReferenceExpression>
+    ): LinRule<T> {
+        children.add(LinRule.TypeReferenceExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun callExpression(block: LinNode.CallExpression.() -> LinNode<UCallExpression>): LinNode<T> {
-        children.add(LinNode.CallExpression().block())
+    fun callExpression(
+        quantifier: Quantifier = Quantifier.Any, block: LinRule.CallExpression.() -> LinRule<UCallExpression>
+    ): LinRule<T> {
+        children.add(LinRule.CallExpression().block().also { it.quantifier = quantifier }.also {
+            it.quantifier = quantifier
+        })
         return this
     }
 
-    fun binaryExpression(block: LinNode.BinaryExpression.() -> LinNode<UBinaryExpression>): LinNode<T> {
-        children.add(LinNode.BinaryExpression().block())
+    fun binaryExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.BinaryExpression.() -> LinRule<UBinaryExpression>
+    ): LinRule<T> {
+        children.add(LinRule.BinaryExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun polyadicExpression(block: LinNode.PolyadicExpression.() -> LinNode<UPolyadicExpression>): LinNode<T> {
-        children.add(LinNode.PolyadicExpression().block())
+    fun polyadicExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.PolyadicExpression.() -> LinRule<UPolyadicExpression>
+    ): LinRule<T> {
+        children.add(LinRule.PolyadicExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
     fun parenthesizedExpression(
-        block: LinNode.ParenthesizedExpression.() -> LinNode<UParenthesizedExpression>
-    ): LinNode<T> {
-        children.add(LinNode.ParenthesizedExpression().block())
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ParenthesizedExpression.() -> LinRule<UParenthesizedExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ParenthesizedExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun unaryExpression(block: LinNode.UnaryExpression.() -> LinNode<UUnaryExpression>): LinNode<T> {
-        children.add(LinNode.UnaryExpression().block())
+    fun unaryExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.UnaryExpression.() -> LinRule<UUnaryExpression>
+    ): LinRule<T> {
+        children.add(LinRule.UnaryExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun binaryExpressionWithType(block: LinNode.BinaryExpressionWithType.() -> LinNode<UBinaryExpressionWithType>): LinNode<T> {
-        children.add(LinNode.BinaryExpressionWithType().block())
+    fun binaryExpressionWithType(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.BinaryExpressionWithType.() -> LinRule<UBinaryExpressionWithType>
+    ): LinRule<T> {
+        children.add(LinRule.BinaryExpressionWithType().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun prefixExpression(block: LinNode.PrefixExpression.() -> LinNode<UPrefixExpression>): LinNode<T> {
-        children.add(LinNode.PrefixExpression().block())
+    fun prefixExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.PrefixExpression.() -> LinRule<UPrefixExpression>
+    ): LinRule<T> {
+        children.add(LinRule.PrefixExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun postfixExpression(block: LinNode.PostfixExpression.() -> LinNode<UPostfixExpression>): LinNode<T> {
-        children.add(LinNode.PostfixExpression().block())
+    fun postfixExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.PostfixExpression.() -> LinRule<UPostfixExpression>
+    ): LinRule<T> {
+        children.add(LinRule.PostfixExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun expressionList(block: LinNode.ExpressionList.() -> LinNode<UExpressionList>): LinNode<T> {
-        children.add(LinNode.ExpressionList().block())
+    fun expressionList(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ExpressionList.() -> LinRule<UExpressionList>
+    ): LinRule<T> {
+        children.add(LinRule.ExpressionList().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun ifExpression(block: LinNode.IfExpression.() -> LinNode<UIfExpression>): LinNode<T> {
-        children.add(LinNode.IfExpression().block())
+    fun ifExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.IfExpression.() -> LinRule<UIfExpression>
+    ): LinRule<T> {
+        children.add(LinRule.IfExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun switchExpression(block: LinNode.SwitchExpression.() -> LinNode<USwitchExpression>): LinNode<T> {
-        children.add(LinNode.SwitchExpression().block())
+    fun switchExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.SwitchExpression.() -> LinRule<USwitchExpression>
+    ): LinRule<T> {
+        children.add(LinRule.SwitchExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun switchClauseExpression(block: LinNode.SwitchClauseExpression.() -> LinNode<USwitchClauseExpression>): LinNode<T> {
-        children.add(LinNode.SwitchClauseExpression().block())
+    fun switchClauseExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.SwitchClauseExpression.() -> LinRule<USwitchClauseExpression>
+    ): LinRule<T> {
+        children.add(LinRule.SwitchClauseExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun whileExpression(block: LinNode.WhileExpression.() -> LinNode<UWhileExpression>): LinNode<T> {
-        children.add(LinNode.WhileExpression().block())
+    fun whileExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.WhileExpression.() -> LinRule<UWhileExpression>
+    ): LinRule<T> {
+        children.add(LinRule.WhileExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun doWhileExpression(block: LinNode.DoWhileExpression.() -> LinNode<UDoWhileExpression>): LinNode<T> {
-        children.add(LinNode.DoWhileExpression().block())
+    fun doWhileExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.DoWhileExpression.() -> LinRule<UDoWhileExpression>
+    ): LinRule<T> {
+        children.add(LinRule.DoWhileExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun forExpression(block: LinNode.ForExpression.() -> LinNode<UForExpression>): LinNode<T> {
-        children.add(LinNode.ForExpression().block())
+    fun forExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ForExpression.() -> LinRule<UForExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ForExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun forEachExpression(block: LinNode.ForEachExpression.() -> LinNode<UForEachExpression>): LinNode<T> {
-        children.add(LinNode.ForEachExpression().block())
+    fun forEachExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ForEachExpression.() -> LinRule<UForEachExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ForEachExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun tryExpression(block: LinNode.TryExpression.() -> LinNode<UTryExpression>): LinNode<T> {
-        children.add(LinNode.TryExpression().block())
+    fun tryExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.TryExpression.() -> LinRule<UTryExpression>
+    ): LinRule<T> {
+        children.add(LinRule.TryExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun catchClause(block: LinNode.CatchClause.() -> LinNode<UCatchClause>): LinNode<T> {
-        children.add(LinNode.CatchClause().block())
+    fun catchClause(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.CatchClause.() -> LinRule<UCatchClause>
+    ): LinRule<T> {
+        children.add(LinRule.CatchClause().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun literalExpression(block: LinNode.LiteralExpression.() -> LinNode<ULiteralExpression>): LinNode<T> {
-        children.add(LinNode.LiteralExpression().block())
+    fun literalExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.LiteralExpression.() -> LinRule<ULiteralExpression>
+    ): LinRule<T> {
+        children.add(LinRule.LiteralExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun thisExpression(block: LinNode.ThisExpression.() -> LinNode<UThisExpression>): LinNode<T> {
-        children.add(LinNode.ThisExpression().block())
+    fun thisExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ThisExpression.() -> LinRule<UThisExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ThisExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun superExpression(block: LinNode.SuperExpression.() -> LinNode<USuperExpression>): LinNode<T> {
-        children.add(LinNode.SuperExpression().block())
+    fun superExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.SuperExpression.() -> LinRule<USuperExpression>
+    ): LinRule<T> {
+        children.add(LinRule.SuperExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun returnExpression(block: LinNode.ReturnExpression.() -> LinNode<UReturnExpression>): LinNode<T> {
-        children.add(LinNode.ReturnExpression().block())
+    fun returnExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ReturnExpression.() -> LinRule<UReturnExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ReturnExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun breakExpression(block: LinNode.BreakExpression.() -> LinNode<UBreakExpression>): LinNode<T> {
-        children.add(LinNode.BreakExpression().block())
+    fun breakExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.BreakExpression.() -> LinRule<UBreakExpression>
+    ): LinRule<T> {
+        children.add(LinRule.BreakExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun continueExpression(block: LinNode.ContinueExpression.() -> LinNode<UContinueExpression>): LinNode<T> {
-        children.add(LinNode.ContinueExpression().block())
+    fun continueExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ContinueExpression.() -> LinRule<UContinueExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ContinueExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun throwExpression(block: LinNode.ThrowExpression.() -> LinNode<UThrowExpression>): LinNode<T> {
-        children.add(LinNode.ThrowExpression().block())
+    fun throwExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ThrowExpression.() -> LinRule<UThrowExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ThrowExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun arrayAccessExpression(block: LinNode.ArrayAccessExpression.() -> LinNode<UArrayAccessExpression>): LinNode<T> {
-        children.add(LinNode.ArrayAccessExpression().block())
+    fun arrayAccessExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ArrayAccessExpression.() -> LinRule<UArrayAccessExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ArrayAccessExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
     fun callableReferenceExpression(
-        block: LinNode.CallableReferenceExpression.() -> LinNode<UCallableReferenceExpression>
-    ): LinNode<T> {
-        children.add(LinNode.CallableReferenceExpression().block())
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.CallableReferenceExpression.() -> LinRule<UCallableReferenceExpression>
+    ): LinRule<T> {
+        children.add(LinRule.CallableReferenceExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
     fun classLiteralExpression(
-        block: LinNode.ClassLiteralExpression.() -> LinNode<UClassLiteralExpression>
-    ): LinNode<T> {
-        children.add(LinNode.ClassLiteralExpression().block())
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ClassLiteralExpression.() -> LinRule<UClassLiteralExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ClassLiteralExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun lambdaExpression(block: LinNode.LambdaExpression.() -> LinNode<ULambdaExpression>): LinNode<T> {
-        children.add(LinNode.LambdaExpression().block())
+    fun lambdaExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.LambdaExpression.() -> LinRule<ULambdaExpression>
+    ): LinRule<T> {
+        children.add(LinRule.LambdaExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    fun objectLiteralExpression(block: LinNode.ObjectLiteralExpression.() -> LinNode<UObjectLiteralExpression>): LinNode<T> {
-        children.add(LinNode.ObjectLiteralExpression().block())
+    fun objectLiteralExpression(
+        quantifier: Quantifier = Quantifier.Any,
+        block: LinRule.ObjectLiteralExpression.() -> LinRule<UObjectLiteralExpression>
+    ): LinRule<T> {
+        children.add(LinRule.ObjectLiteralExpression().block().also { it.quantifier = quantifier })
         return this
     }
 
-    class File : LinNode<UFile>(UFile::class)
-    class Import : LinNode<UImportStatement>(UImportStatement::class)
-    class Declaration : LinNode<UDeclaration>(UDeclaration::class)
-    class Type : LinNode<UClass>(UClass::class)
-    class Initializer : LinNode<UClassInitializer>(UClassInitializer::class)
-    class Method : LinNode<UMethod>(UMethod::class)
-    class Variable : LinNode<UVariable>(UVariable::class)
-    class Parameter : LinNode<UParameter>(UParameter::class)
-    class Field : LinNode<UField>(UField::class)
-    class LocalVariable : LinNode<ULocalVariable>(ULocalVariable::class)
-    class EnumConstant : LinNode<ULocalVariable>(ULocalVariable::class)
-    class Annotation : LinNode<UAnnotation>(UAnnotation::class)
-    class Expression : LinNode<UExpression>(UExpression::class)
-    class LabeledExpression : LinNode<ULabeledExpression>(ULabeledExpression::class)
-    class DeclarationsExpression : LinNode<UDeclarationsExpression>(UDeclarationsExpression::class)
-    class BlockExpression : LinNode<UBlockExpression>(UBlockExpression::class)
-    class QualifiedReferenceExpression : LinNode<UQualifiedReferenceExpression>(UQualifiedReferenceExpression::class)
+    class File : LinRule<UFile>(UFile::class)
+    class Import : LinRule<UImportStatement>(UImportStatement::class)
+    class Declaration : LinRule<UDeclaration>(UDeclaration::class)
+    class Type : LinRule<UClass>(UClass::class)
+    class Initializer : LinRule<UClassInitializer>(UClassInitializer::class)
+    class Method : LinRule<UMethod>(UMethod::class)
+    class Variable : LinRule<UVariable>(UVariable::class)
+    class Parameter : LinRule<UParameter>(UParameter::class)
+    class Field : LinRule<UField>(UField::class)
+    class LocalVariable : LinRule<ULocalVariable>(ULocalVariable::class)
+    class EnumConstant : LinRule<ULocalVariable>(ULocalVariable::class)
+    class Annotation : LinRule<UAnnotation>(UAnnotation::class)
+    class Expression : LinRule<UExpression>(UExpression::class)
+    class LabeledExpression : LinRule<ULabeledExpression>(ULabeledExpression::class)
+    class DeclarationsExpression : LinRule<UDeclarationsExpression>(UDeclarationsExpression::class)
+    class BlockExpression : LinRule<UBlockExpression>(UBlockExpression::class)
+    class QualifiedReferenceExpression : LinRule<UQualifiedReferenceExpression>(UQualifiedReferenceExpression::class)
     class SimpleNameReferenceExpression :
-        LinNode<USimpleNameReferenceExpression>(USimpleNameReferenceExpression::class)
+        LinRule<USimpleNameReferenceExpression>(USimpleNameReferenceExpression::class)
 
-    class TypeReferenceExpression : LinNode<UTypeReferenceExpression>(UTypeReferenceExpression::class)
-    class CallExpression : LinNode<UCallExpression>(UCallExpression::class)
-    class BinaryExpression : LinNode<UBinaryExpression>(UBinaryExpression::class)
-    class BinaryExpressionWithType : LinNode<UBinaryExpressionWithType>(UBinaryExpressionWithType::class)
-    class PolyadicExpression : LinNode<UPolyadicExpression>(UPolyadicExpression::class)
-    class ParenthesizedExpression : LinNode<UParenthesizedExpression>(UParenthesizedExpression::class)
-    class UnaryExpression : LinNode<UUnaryExpression>(UUnaryExpression::class)
-    class PrefixExpression : LinNode<UPrefixExpression>(UPrefixExpression::class)
-    class PostfixExpression : LinNode<UPostfixExpression>(UPostfixExpression::class)
-    class ExpressionList : LinNode<UExpressionList>(UExpressionList::class)
-    class IfExpression : LinNode<UIfExpression>(UIfExpression::class)
-    class SwitchExpression : LinNode<USwitchExpression>(USwitchExpression::class)
-    class SwitchClauseExpression : LinNode<USwitchClauseExpression>(USwitchClauseExpression::class)
-    class WhileExpression : LinNode<UWhileExpression>(UWhileExpression::class)
-    class DoWhileExpression : LinNode<UDoWhileExpression>(UDoWhileExpression::class)
-    class ForExpression : LinNode<UForExpression>(UForExpression::class)
-    class ForEachExpression : LinNode<UForEachExpression>(UForEachExpression::class)
-    class TryExpression : LinNode<UTryExpression>(UTryExpression::class)
-    class CatchClause : LinNode<UCatchClause>(UCatchClause::class)
-    class LiteralExpression : LinNode<ULiteralExpression>(ULiteralExpression::class)
-    class ThisExpression : LinNode<UThisExpression>(UThisExpression::class)
-    class SuperExpression : LinNode<USuperExpression>(USuperExpression::class)
-    class ReturnExpression : LinNode<UReturnExpression>(UReturnExpression::class)
-    class BreakExpression : LinNode<UBreakExpression>(UBreakExpression::class)
-    class ContinueExpression : LinNode<UContinueExpression>(UContinueExpression::class)
-    class ThrowExpression : LinNode<UThrowExpression>(UThrowExpression::class)
-    class ArrayAccessExpression : LinNode<UArrayAccessExpression>(UArrayAccessExpression::class)
-    class CallableReferenceExpression : LinNode<UCallableReferenceExpression>(UCallableReferenceExpression::class)
-    class ClassLiteralExpression : LinNode<UClassLiteralExpression>(UClassLiteralExpression::class)
-    class LambdaExpression : LinNode<ULambdaExpression>(ULambdaExpression::class)
-    class ObjectLiteralExpression : LinNode<UObjectLiteralExpression>(UObjectLiteralExpression::class)
+    class TypeReferenceExpression : LinRule<UTypeReferenceExpression>(UTypeReferenceExpression::class)
+    class CallExpression : LinRule<UCallExpression>(UCallExpression::class)
+    class BinaryExpression : LinRule<UBinaryExpression>(UBinaryExpression::class)
+    class BinaryExpressionWithType : LinRule<UBinaryExpressionWithType>(UBinaryExpressionWithType::class)
+    class PolyadicExpression : LinRule<UPolyadicExpression>(UPolyadicExpression::class)
+    class ParenthesizedExpression : LinRule<UParenthesizedExpression>(UParenthesizedExpression::class)
+    class UnaryExpression : LinRule<UUnaryExpression>(UUnaryExpression::class)
+    class PrefixExpression : LinRule<UPrefixExpression>(UPrefixExpression::class)
+    class PostfixExpression : LinRule<UPostfixExpression>(UPostfixExpression::class)
+    class ExpressionList : LinRule<UExpressionList>(UExpressionList::class)
+    class IfExpression : LinRule<UIfExpression>(UIfExpression::class)
+    class SwitchExpression : LinRule<USwitchExpression>(USwitchExpression::class)
+    class SwitchClauseExpression : LinRule<USwitchClauseExpression>(USwitchClauseExpression::class)
+    class WhileExpression : LinRule<UWhileExpression>(UWhileExpression::class)
+    class DoWhileExpression : LinRule<UDoWhileExpression>(UDoWhileExpression::class)
+    class ForExpression : LinRule<UForExpression>(UForExpression::class)
+    class ForEachExpression : LinRule<UForEachExpression>(UForEachExpression::class)
+    class TryExpression : LinRule<UTryExpression>(UTryExpression::class)
+    class CatchClause : LinRule<UCatchClause>(UCatchClause::class)
+    class LiteralExpression : LinRule<ULiteralExpression>(ULiteralExpression::class)
+    class ThisExpression : LinRule<UThisExpression>(UThisExpression::class)
+    class SuperExpression : LinRule<USuperExpression>(USuperExpression::class)
+    class ReturnExpression : LinRule<UReturnExpression>(UReturnExpression::class)
+    class BreakExpression : LinRule<UBreakExpression>(UBreakExpression::class)
+    class ContinueExpression : LinRule<UContinueExpression>(UContinueExpression::class)
+    class ThrowExpression : LinRule<UThrowExpression>(UThrowExpression::class)
+    class ArrayAccessExpression : LinRule<UArrayAccessExpression>(UArrayAccessExpression::class)
+    class CallableReferenceExpression : LinRule<UCallableReferenceExpression>(UCallableReferenceExpression::class)
+    class ClassLiteralExpression : LinRule<UClassLiteralExpression>(UClassLiteralExpression::class)
+    class LambdaExpression : LinRule<ULambdaExpression>(ULambdaExpression::class)
+    class ObjectLiteralExpression : LinRule<UObjectLiteralExpression>(UObjectLiteralExpression::class)
 }
-
-data class Rule(val issueBuilder: IssueBuilder, val node: LinNode<*>)
-
-fun rule(issueBuilder: IssueBuilder, node: LinNode<*>) = Rule(issueBuilder, node)
-
-fun file(block: LinNode.File.() -> LinNode<UFile>) = LinNode.File().block()
