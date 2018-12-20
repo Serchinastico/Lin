@@ -5,15 +5,25 @@ import org.jetbrains.uast.*
 import java.util.*
 import kotlin.reflect.KClass
 
-data class LinRule(val issueBuilder: IssueBuilder, val root: LinNode<UElement>) {
+data class LinRule(val issueBuilder: IssueBuilder, val roots: List<LinNode<UElement>>) {
     val applicableTypes: List<Class<out UElement>> = listOf(UFile::class.java)
+}
+
+data class RuleSet(val nodes: List<LinNode<*>>) {
+    companion object {
+        fun anyOf(vararg nodes: LinNode<*>) = RuleSet(nodes.toList())
+    }
 }
 
 fun rule(
     issueBuilder: IssueBuilder,
-    quantifier: Quantifier = Quantifier.Any,
+    nodes: RuleSet
+): LinRule = LinRule(issueBuilder, nodes.nodes)
+
+fun rule(
+    issueBuilder: IssueBuilder,
     block: LinNode.File.() -> LinNode<*>
-): LinRule = LinRule(issueBuilder, LinNode.File().block().also { it.quantifier = quantifier })
+): LinRule = LinRule(issueBuilder, listOf(LinNode.File().block()))
 
 fun issue(
     scope: EnumSet<Scope>,

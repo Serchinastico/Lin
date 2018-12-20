@@ -20,7 +20,7 @@ typealias Counters = Map<Quantifier, Int>
 fun Counters.getCount(quantifier: Quantifier): Int = this.getOrDefault(quantifier, 0)
 fun Counters.plusOne(quantifier: Quantifier): Counters = plus(quantifier to getCount(quantifier) + 1)
 
-fun LinNode<UElement>.matches(code: List<TreeNode>): Boolean = matches(code, listOf(this))
+fun List<LinNode<UElement>>.matchesAny(code: List<TreeNode>): Boolean = this.any { matchesAll(code, listOf(it)) }
 
 fun LinNode<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
     val superClasses = mutableSetOf<KClass<out UElement>>()
@@ -35,10 +35,10 @@ fun LinNode<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
     return superClasses.toList()
 }
 
-fun matches(codeNodes: List<TreeNode>, ruleNodes: List<LinNode<UElement>>): Boolean =
-    matches(codeNodes, ruleNodes, emptyMap())
+private fun matchesAll(codeNodes: List<TreeNode>, ruleNodes: List<LinNode<UElement>>): Boolean =
+    matchesAll(codeNodes, ruleNodes, emptyMap())
 
-private fun matches(
+private fun matchesAll(
     codeNodes: List<TreeNode>,
     ruleNodes: List<LinNode<UElement>>,
     quantifierCounters: Map<Quantifier, Int>
@@ -72,16 +72,16 @@ private fun matches(
         .filter { it.matches(headCodeNode.element, quantifierCounters) }
         .any { ruleNode ->
             when (ruleNode.quantifier) {
-                Quantifier.All -> matches(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                        matches(tailCodeNodes, ruleNodes, quantifierCounters)
-                Quantifier.Any -> matches(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                        matches(tailCodeNodes, ruleNodes.minus(ruleNode), quantifierCounters)
+                Quantifier.All -> matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
+                        matchesAll(tailCodeNodes, ruleNodes, quantifierCounters)
+                Quantifier.Any -> matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
+                        matchesAll(tailCodeNodes, ruleNodes.minus(ruleNode), quantifierCounters)
                 is Quantifier.Times, is Quantifier.AtLeast, is Quantifier.AtMost ->
-                    matches(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                            matches(tailCodeNodes, ruleNodes, quantifierCounters.plusOne(ruleNode.quantifier))
+                    matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
+                            matchesAll(tailCodeNodes, ruleNodes, quantifierCounters.plusOne(ruleNode.quantifier))
             }
         } || ((ruleNodes.none { it.quantifier == Quantifier.All } &&
-            matches(tailCodeNodes, ruleNodes, quantifierCounters)))
+            matchesAll(tailCodeNodes, ruleNodes, quantifierCounters)))
 }
 
 private fun Counters.allQualifiersMeetRequirements(rules: List<LinNode<UElement>>): Boolean = rules.all { rule ->

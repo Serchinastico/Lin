@@ -7,15 +7,15 @@ import kotlin.reflect.full.isSuperclassOf
 
 data class LinVisitor(val rule: LinRule) : UastVisitor {
 
-    private val validUElementClassNames: List<KClass<out UElement>> by lazy {
-        rule.root.allUElementSuperClasses()
+    private val validUElementClassNames: Set<KClass<out UElement>> by lazy {
+        rule.roots.flatMap { it.allUElementSuperClasses() }.toSet()
     }
     private var root: MutableList<TreeNode> = mutableListOf()
     private var currentNode: TreeNode? = null
 
     val shouldReport: Boolean
         get() {
-            return rule.root.matches(root)
+            return rule.roots.matchesAny(root)
         }
 
     operator fun plusAssign(localVisitor: LinVisitor) {
@@ -26,11 +26,9 @@ data class LinVisitor(val rule: LinRule) : UastVisitor {
         if (!validUElementClassNames.any { it.isSuperclassOf(node::class) }) {
             return false
         }
-        println("VISIT ${this.hashCode()} - $node")
 
         val newChild = TreeNode(node, currentNode, mutableListOf())
         val newChildParent = currentNode.let { it?.children ?: root }
-        println("ADDING TO: $newChildParent")
         newChildParent.add(newChild)
         currentNode = newChild
         return false
@@ -40,8 +38,6 @@ data class LinVisitor(val rule: LinRule) : UastVisitor {
         if (!validUElementClassNames.any { it.isSuperclassOf(node::class) }) {
             return
         }
-        println("AFTER VISIT ${this.hashCode()} - $node")
-        println("ROOT: $root")
         currentNode = currentNode?.parent
     }
 }
