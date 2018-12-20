@@ -12,10 +12,10 @@ import com.serchinastico.lin.dsl.issue
 fun noDataFrameworksFromAndroidClass() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
-        "Framework classes to get or store data should never be called from Activities, Fragments or any other" +
-                " Android related view.",
-        "Your Android classes should not be responsible for retrieving or storing information, that should be " +
-                "responsibility of another classes.",
+        """Framework classes to get or store data should never be called from Activities, Fragments or any other
+                | Android related view.""".trimMargin(),
+        """Your Android classes should not be responsible for retrieving or storing information, that should be
+                | responsibility of another classes.""".trimMargin(),
         Category.INTEROPERABILITY
     )
 ) {
