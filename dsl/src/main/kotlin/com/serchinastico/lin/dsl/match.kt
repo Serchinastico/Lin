@@ -36,19 +36,8 @@ fun LinNode<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
 }
 
 fun matches(codeNodes: List<TreeNode>, ruleNodes: List<LinNode<UElement>>): Boolean =
-    try {
-        matches(codeNodes, ruleNodes, emptyMap())
-    } catch (e: MatchError) {
-        false
-    }
+    matches(codeNodes, ruleNodes, emptyMap())
 
-/* The function throws an error if we decided the rules won't ever apply to the code.
- * We could do it with a different type for it and dealing with it every time we'd find it but I'm finding it easier
- * to read if we consider that a different thing.
- * I'm doing it because it's a private function so that we don't ever throw that exception out of this code and because
- * thanks to breaking the whole call stack we don't have to deal with it every single time we find it, just on the
- * caller's side
- */
 private fun matches(
     codeNodes: List<TreeNode>,
     ruleNodes: List<LinNode<UElement>>,
@@ -68,8 +57,18 @@ private fun matches(
     val headCodeNode = codeNodes.first()
     val tailCodeNodes = codeNodes.drop(1)
 
-    return ruleNodes
-        .filter { it.elementType.isSuperclassOf(headCodeNode.element::class) }
+    val applicableRuleNodes = ruleNodes.filter { it.elementType.isSuperclassOf(headCodeNode.element::class) }
+
+    // We first check if there is any rule that is impossible to continue matching
+    // e.g. All rule failing, Times rule greater than its counter
+    val isPossibleToContinueMatching = applicableRuleNodes
+        .any { !it.isPossibleToContinueMatching(headCodeNode.element, quantifierCounters) }
+
+    if (isPossibleToContinueMatching) {
+        return false
+    }
+
+    return applicableRuleNodes
         .filter { it.matches(headCodeNode.element, quantifierCounters) }
         .any { ruleNode ->
             when (ruleNode.quantifier) {
@@ -95,6 +94,18 @@ private fun Counters.allQualifiersMeetRequirements(rules: List<LinNode<UElement>
     }
 }
 
+private fun LinNode<UElement>.isPossibleToContinueMatching(
+    element: UElement,
+    quantifierCounters: Map<Quantifier, Int>
+): Boolean = quantifier.let {
+    when (it) {
+        Quantifier.All -> ruleMatchesAll(this, element)
+        is Quantifier.Times -> quantifierCounters.getCount(it) < it.times
+        is Quantifier.LessThan -> quantifierCounters.getCount(it) < it.times - 1
+        Quantifier.Any, is Quantifier.MoreThan -> true
+    }
+}
+
 private val matchesMemoizedValues = mutableMapOf<Triple<LinNode<UElement>, UElement, Counters>, Boolean>()
 private fun LinNode<UElement>.matches(
     element: UElement,
@@ -114,11 +125,7 @@ private fun LinNode<UElement>.matches(
 private fun ruleMatchesAll(
     rule: LinNode<UElement>,
     element: UElement
-): Boolean = if (rule.reportingPredicate(element)) {
-    true
-} else {
-    throw MatchError()
-}
+): Boolean = rule.reportingPredicate(element)
 
 private fun ruleMatchesAny(
     rule: LinNode<UElement>,
@@ -135,11 +142,7 @@ private fun ruleMatchTimes(
         return false
     }
 
-    return if (quantifierCounters.getCount(quantifier) >= quantifier.times) {
-        throw MatchError()
-    } else {
-        true
-    }
+    return quantifierCounters.getCount(quantifier) < quantifier.times
 }
 
 private fun ruleMatchMoreThan(
@@ -157,11 +160,5 @@ private fun ruleMatchLessThan(
         return false
     }
 
-    return if (quantifierCounters.getCount(quantifier) >= quantifier.times - 1) {
-        throw MatchError()
-    } else {
-        true
-    }
+    return quantifierCounters.getCount(quantifier) < quantifier.times - 1
 }
-
-private class MatchError : Error("Impossible to find a match")
