@@ -2,17 +2,17 @@ package com.serchinastico.lin.rules
 
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
-import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.Quantifier.Companion.moreThan
 import com.serchinastico.lin.dsl.RuleSet.Companion.anyOf
+import com.serchinastico.lin.dsl.detector
 import com.serchinastico.lin.dsl.file
 import com.serchinastico.lin.dsl.issue
-import com.serchinastico.lin.dsl.rule
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.util.isConstructorCall
 
-@Rule
-fun noMoreThanOneGsonInstance() = rule(
+@Detector
+fun noMoreThanOneGsonInstance() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
         "Gson should only be initialized only once",
@@ -29,7 +29,7 @@ fun noMoreThanOneGsonInstance() = rule(
     )
 )
 
-private val UCallExpression.isGsonConstructor: Boolean
+private inline val UCallExpression.isGsonConstructor: Boolean
     get() {
         val returnTypeCanonicalName = returnType?.canonicalText ?: return false
         return isConstructorCall() && returnTypeCanonicalName == "com.google.gson.Gson"

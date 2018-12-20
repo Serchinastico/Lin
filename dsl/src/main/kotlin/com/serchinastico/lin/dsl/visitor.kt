@@ -5,17 +5,17 @@ import org.jetbrains.uast.visitor.UastVisitor
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
 
-data class LinVisitor(val rule: LinRule) : UastVisitor {
+data class LinVisitor(val detector: LinDetector) : UastVisitor {
 
     private val validUElementClassNames: Set<KClass<out UElement>> by lazy {
-        rule.roots.flatMap { it.allUElementSuperClasses() }.toSet()
+        detector.roots.flatMap { it.allUElementSuperClasses() }.toSet()
     }
     private var root: MutableList<TreeNode> = mutableListOf()
     private var currentNode: TreeNode? = null
 
     val shouldReport: Boolean
         get() {
-            return rule.roots.matchesAny(root)
+            return detector.roots.matchesAny(root)
         }
 
     operator fun plusAssign(localVisitor: LinVisitor) {

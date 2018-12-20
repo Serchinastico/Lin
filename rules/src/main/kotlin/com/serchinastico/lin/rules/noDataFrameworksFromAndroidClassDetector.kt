@@ -2,14 +2,14 @@ package com.serchinastico.lin.rules
 
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
-import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.annotations.Detector
+import com.serchinastico.lin.dsl.detector
 import com.serchinastico.lin.dsl.isAndroidFrameworkType
 import com.serchinastico.lin.dsl.isFrameworkLibraryImport
 import com.serchinastico.lin.dsl.issue
-import com.serchinastico.lin.dsl.rule
 
-@Rule
-fun noDataFrameworksFromAndroidClass() = rule(
+@Detector
+fun noDataFrameworksFromAndroidClass() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
         "Framework classes to get or store data should never be called from Activities, Fragments or any other" +

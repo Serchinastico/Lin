@@ -1,9 +1,9 @@
 package com.serchinastico.lin.processor
 
 import com.google.auto.service.AutoService
-import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.IssueBuilder
-import com.serchinastico.lin.dsl.LinRule
+import com.serchinastico.lin.dsl.LinDetector
 import com.serchinastico.lin.dsl.LinVisitor
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -18,13 +18,13 @@ import javax.tools.StandardLocation
 @AutoService(Processor::class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedOptions(RuleProcessor.KAPT_KOTLIN_GENERATED_OPTION_NAME)
-@SupportedAnnotationTypes("com.serchinastico.lin.annotations.Rule")
+@SupportedAnnotationTypes("com.serchinastico.lin.annotations.Detector")
 class RuleProcessor : AbstractProcessor() {
 
     companion object {
         const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"
 
-        val LIN_RULE_CLASS_NAME = ClassName("com.serchinastico.lin.dsl", "LinRule")
+        val LIN_RULE_CLASS_NAME = ClassName("com.serchinastico.lin.dsl", "LinDetector")
         val ISSUE_CLASS_NAME = ClassName("com.android.tools.lint.detector.api", "Issue")
         val DETECTOR_CLASS_NAME = ClassName("com.android.tools.lint.detector.api", "Detector")
         val UAST_SCANNER_CLASS_NAME = ClassName("com.android.tools.lint.detector.api.Detector", "UastScanner")
@@ -39,7 +39,7 @@ class RuleProcessor : AbstractProcessor() {
     override fun process(annotations: MutableSet<out TypeElement>?, roundEnvironment: RoundEnvironment?): Boolean {
         roundEnvironment ?: return false
 
-        val annotatedElements = roundEnvironment.getElementsAnnotatedWith(Rule::class.java)
+        val annotatedElements = roundEnvironment.getElementsAnnotatedWith(Detector::class.java)
 
         val generatedSourcesRoot: String = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME].orEmpty()
         if (ensureOutputDirectoryExists(generatedSourcesRoot)) return false
@@ -50,7 +50,7 @@ class RuleProcessor : AbstractProcessor() {
                 val returnTypeName = element.returnType.asTypeName()
 
                 if (returnTypeName != LIN_RULE_CLASS_NAME) {
-                    printError("${Rule::class.simpleName} annotation has to be applied to a function returning a ${LinRule::class.simpleName} instance.")
+                    printError("${Detector::class.simpleName} annotation has to be applied to a function returning a ${LinDetector::class.simpleName} instance.")
                     return false
                 }
 
@@ -95,7 +95,7 @@ class RuleProcessor : AbstractProcessor() {
 
     private fun TypeSpec.Builder.addRuleProperty(ruleText: String): TypeSpec.Builder =
         addProperty(
-            PropertySpec.builder("rule", LinRule::class)
+            PropertySpec.builder("detector", LinDetector::class)
                 .delegate(
                     CodeBlock.builder()
                         .beginControlFlow("lazy")
@@ -112,7 +112,7 @@ class RuleProcessor : AbstractProcessor() {
                 .delegate(
                     CodeBlock.builder()
                         .beginControlFlow("lazy")
-                        .add("rule.issueBuilder")
+                        .add("detector.issueBuilder")
                         .endControlFlow()
                         .build()
                 )
@@ -125,7 +125,7 @@ class RuleProcessor : AbstractProcessor() {
                 .delegate(
                     CodeBlock.builder()
                         .beginControlFlow("lazy")
-                        .add("rule.issueBuilder.build($className::class)")
+                        .add("detector.issueBuilder.build($className::class)")
                         .endControlFlow()
                         .build()
                 )
@@ -135,7 +135,7 @@ class RuleProcessor : AbstractProcessor() {
     private fun TypeSpec.Builder.addVisitorProperty(): TypeSpec.Builder =
         addProperty(
             PropertySpec.builder("projectVisitor", LinVisitor::class)
-                .initializer("LinVisitor(rule)")
+                .initializer("LinVisitor(detector)")
                 .build()
         )
 
@@ -160,7 +160,7 @@ class RuleProcessor : AbstractProcessor() {
         addFunction(
             FunSpec.builder("getApplicableUastTypes")
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return rule.applicableTypes")
+                .addCode("return detector.applicableTypes")
                 .returns(LIST_CLASS_NAME.parameterizedBy(CLASS_CLASS_NAME.parameterizedBy(U_ELEMENT_OUT_CLASS_NAME)))
                 .build()
         )
@@ -218,7 +218,7 @@ class RuleProcessor : AbstractProcessor() {
 
     private fun FunSpec.Builder.addShouldReportFunction(): FunSpec.Builder =
         addCode(
-            """ |val fileVisitor = LinVisitor(rule)
+            """ |val fileVisitor = LinVisitor(detector)
                 |node.accept(fileVisitor)
                 |if (fileVisitor.shouldReport) {
                 |   context.report(issue)

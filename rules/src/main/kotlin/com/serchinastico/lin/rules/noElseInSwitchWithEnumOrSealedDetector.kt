@@ -2,11 +2,12 @@ package com.serchinastico.lin.rules
 
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
-import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.*
+import org.jetbrains.uast.USwitchExpression
 
-@Rule
-fun noElseInSwitchWithEnumOrSealed() = rule(
+@Detector
+fun noElseInSwitchWithEnumOrSealed() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
         "There should not be else/default branches on a switch statement checking for enum/sealed class values",
@@ -15,15 +16,16 @@ fun noElseInSwitchWithEnumOrSealed() = rule(
         Category.CORRECTNESS
     )
 ) {
-    switchExpression {
-        suchThat { node ->
-            val classReferenceType = node.expression?.getExpressionType() ?: (return@suchThat false)
-
-            if (!classReferenceType.isEnum && !classReferenceType.isSealed) {
-                return@suchThat false
-            }
-
-            node.clauses.any { clause -> clause.isElseBranch }
-        }
-    }
+    switchExpression { suchThat { it.hasElseWithEnumOrSealedExpression } }
 }
+
+private inline val USwitchExpression.hasElseWithEnumOrSealedExpression: Boolean
+    get() {
+        val classReferenceType = expression?.getExpressionType() ?: return false
+
+        if (!classReferenceType.isEnum && !classReferenceType.isSealed) {
+            return false
+        }
+
+        return clauses.any { clause -> clause.isElseBranch }
+    }

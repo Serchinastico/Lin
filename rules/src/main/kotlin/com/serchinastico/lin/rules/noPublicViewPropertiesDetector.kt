@@ -2,14 +2,15 @@ package com.serchinastico.lin.rules
 
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
-import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.annotations.Detector
+import com.serchinastico.lin.dsl.detector
 import com.serchinastico.lin.dsl.isClassOrSubclassOf
 import com.serchinastico.lin.dsl.isPrivate
 import com.serchinastico.lin.dsl.issue
-import com.serchinastico.lin.dsl.rule
+import org.jetbrains.uast.UField
 
-@Rule
-fun noPublicViewProperties() = rule(
+@Detector
+fun noPublicViewProperties() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
         "View properties should always be private",
@@ -19,13 +20,13 @@ fun noPublicViewProperties() = rule(
         Category.CORRECTNESS
     )
 ) {
-    field {
-        suchThat { node ->
-            val isPrivateField = node.isPrivate
-            val isViewType = node.isClassOrSubclassOf("android.view.View")
-
-            !isPrivateField && isViewType
-        }
-    }
-
+    field { suchThat { it.isNonPrivateViewField } }
 }
+
+private inline val UField.isNonPrivateViewField: Boolean
+    get() {
+        val isPrivateField = isPrivate
+        val isViewType = isClassOrSubclassOf("android.view.View")
+
+        return !isPrivateField && isViewType
+    }

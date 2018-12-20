@@ -2,14 +2,15 @@ package com.serchinastico.lin.rules
 
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
-import com.serchinastico.lin.annotations.Rule
+import com.serchinastico.lin.annotations.Detector
+import com.serchinastico.lin.dsl.detector
 import com.serchinastico.lin.dsl.isClassOrSubclassOf
 import com.serchinastico.lin.dsl.issue
-import com.serchinastico.lin.dsl.rule
+import org.jetbrains.uast.UCallExpression
 
 
-@Rule
-fun noSetOnClickListenerCalls() = rule(
+@Detector
+fun noSetOnClickListenerCalls() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
         "There should not be calls to setOnClickListener",
@@ -19,14 +20,15 @@ fun noSetOnClickListenerCalls() = rule(
         Category.CORRECTNESS
     )
 ) {
-    callExpression {
-        suchThat { node ->
-            val receiverType = node.receiverType ?: (return@suchThat false)
-
-            val isReceivedChildOfAndroidView = receiverType.isClassOrSubclassOf("android.view.View")
-            val isMethodNameSetOnClickListener = node.methodIdentifier?.name == "setOnClickListener"
-
-            isReceivedChildOfAndroidView && isMethodNameSetOnClickListener
-        }
-    }
+    callExpression { suchThat { it.isSetOnClickListenerCall } }
 }
+
+private inline val UCallExpression.isSetOnClickListenerCall: Boolean
+    get() {
+        val receiverType = receiverType ?: return false
+
+        val isReceivedChildOfAndroidView = receiverType.isClassOrSubclassOf("android.view.View")
+        val isMethodNameSetOnClickListener = methodIdentifier?.name == "setOnClickListener"
+
+        return isReceivedChildOfAndroidView && isMethodNameSetOnClickListener
+    }

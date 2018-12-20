@@ -20,9 +20,9 @@ typealias Counters = Map<Quantifier, Int>
 fun Counters.getCount(quantifier: Quantifier): Int = this.getOrDefault(quantifier, 0)
 fun Counters.plusOne(quantifier: Quantifier): Counters = plus(quantifier to getCount(quantifier) + 1)
 
-fun List<LinNode<UElement>>.matchesAny(code: List<TreeNode>): Boolean = this.any { matchesAll(code, listOf(it)) }
+fun List<LinRule<UElement>>.matchesAny(code: List<TreeNode>): Boolean = this.any { matchesAll(code, listOf(it)) }
 
-fun LinNode<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
+fun LinRule<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
     val superClasses = mutableSetOf<KClass<out UElement>>()
     val nodesToProcess = mutableListOf(this)
 
@@ -35,29 +35,29 @@ fun LinNode<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
     return superClasses.toList()
 }
 
-private fun matchesAll(codeNodes: List<TreeNode>, ruleNodes: List<LinNode<UElement>>): Boolean =
+private fun matchesAll(codeNodes: List<TreeNode>, ruleNodes: List<LinRule<UElement>>): Boolean =
     matchesAll(codeNodes, ruleNodes, emptyMap())
 
 private fun matchesAll(
     codeNodes: List<TreeNode>,
-    ruleNodes: List<LinNode<UElement>>,
+    rules: List<LinRule<UElement>>,
     quantifierCounters: Map<Quantifier, Int>
 ): Boolean {
     // We finished processing rules and found a match, we succeeded as long as quantifiers match their requirements
-    if (ruleNodes.isEmpty()) {
-        return quantifierCounters.allQualifiersMeetRequirements(ruleNodes)
+    if (rules.isEmpty()) {
+        return quantifierCounters.allQualifiersMeetRequirements(rules)
     }
 
     // We don't have more code and there are still rules, see if there are missing matches
     if (codeNodes.isEmpty()) {
-        return ruleNodes.none { it.quantifier == Quantifier.Any } &&
-                quantifierCounters.allQualifiersMeetRequirements(ruleNodes)
+        return rules.none { it.quantifier == Quantifier.Any } &&
+                quantifierCounters.allQualifiersMeetRequirements(rules)
     }
 
     val headCodeNode = codeNodes.first()
     val tailCodeNodes = codeNodes.drop(1)
 
-    val applicableRuleNodes = ruleNodes.filter { it.elementType.isSuperclassOf(headCodeNode.element::class) }
+    val applicableRuleNodes = rules.filter { it.elementType.isSuperclassOf(headCodeNode.element::class) }
 
     // We first check if there is any rule that is impossible to continue matching
     // e.g. All rule failing, Times rule greater than its counter
@@ -73,18 +73,18 @@ private fun matchesAll(
         .any { ruleNode ->
             when (ruleNode.quantifier) {
                 Quantifier.All -> matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                        matchesAll(tailCodeNodes, ruleNodes, quantifierCounters)
+                        matchesAll(tailCodeNodes, rules, quantifierCounters)
                 Quantifier.Any -> matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                        matchesAll(tailCodeNodes, ruleNodes.minus(ruleNode), quantifierCounters)
+                        matchesAll(tailCodeNodes, rules.minus(ruleNode), quantifierCounters)
                 is Quantifier.Times, is Quantifier.AtLeast, is Quantifier.AtMost ->
                     matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                            matchesAll(tailCodeNodes, ruleNodes, quantifierCounters.plusOne(ruleNode.quantifier))
+                            matchesAll(tailCodeNodes, rules, quantifierCounters.plusOne(ruleNode.quantifier))
             }
-        } || ((ruleNodes.none { it.quantifier == Quantifier.All } &&
-            matchesAll(tailCodeNodes, ruleNodes, quantifierCounters)))
+        } || ((rules.none { it.quantifier == Quantifier.All } &&
+            matchesAll(tailCodeNodes, rules, quantifierCounters)))
 }
 
-private fun Counters.allQualifiersMeetRequirements(rules: List<LinNode<UElement>>): Boolean = rules.all { rule ->
+private fun Counters.allQualifiersMeetRequirements(rules: List<LinRule<UElement>>): Boolean = rules.all { rule ->
     val quantifier = rule.quantifier
     when (quantifier) {
         Quantifier.All, Quantifier.Any -> true
@@ -94,7 +94,7 @@ private fun Counters.allQualifiersMeetRequirements(rules: List<LinNode<UElement>
     }
 }
 
-private fun LinNode<UElement>.isPossibleToContinueMatching(
+private fun LinRule<UElement>.isPossibleToContinueMatching(
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>
 ): Boolean = quantifier.let {
@@ -106,8 +106,8 @@ private fun LinNode<UElement>.isPossibleToContinueMatching(
     }
 }
 
-private val matchesMemoizedValues = mutableMapOf<Triple<LinNode<UElement>, UElement, Counters>, Boolean>()
-private fun LinNode<UElement>.matches(
+private val matchesMemoizedValues = mutableMapOf<Triple<LinRule<UElement>, UElement, Counters>, Boolean>()
+private fun LinRule<UElement>.matches(
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>
 ): Boolean = matchesMemoizedValues.getOrPut(Triple(this, element, quantifierCounters)) {
@@ -123,17 +123,17 @@ private fun LinNode<UElement>.matches(
 }
 
 private fun ruleMatchesAll(
-    rule: LinNode<UElement>,
+    rule: LinRule<UElement>,
     element: UElement
 ): Boolean = rule.reportingPredicate(element)
 
 private fun ruleMatchesAny(
-    rule: LinNode<UElement>,
+    rule: LinRule<UElement>,
     element: UElement
 ): Boolean = rule.reportingPredicate(element)
 
 private fun ruleMatchTimes(
-    rule: LinNode<UElement>,
+    rule: LinRule<UElement>,
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>,
     quantifier: Quantifier.Times
@@ -146,12 +146,12 @@ private fun ruleMatchTimes(
 }
 
 private fun ruleMatchAtLeast(
-    rule: LinNode<UElement>,
+    rule: LinRule<UElement>,
     element: UElement
 ): Boolean = rule.reportingPredicate(element)
 
 private fun ruleMatchAtMost(
-    rule: LinNode<UElement>,
+    rule: LinRule<UElement>,
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>,
     quantifier: Quantifier.AtMost
