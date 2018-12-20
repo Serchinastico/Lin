@@ -8,8 +8,8 @@
 
 Lin is an Android Lint tool made simpler. It has two different goals:
 
-1. To create a set of highly opinionated rules to apply to your Android projects.
-2. To offer a Kotlin DSL to write your own rules in a much easier way.
+1. To create a set of highly opinionated detectors to apply to your Android projects.
+2. To offer a Kotlin DSL to write your own detectors in a much easier way.
 
 ## How to use
 
@@ -24,20 +24,20 @@ allprojects {
 }
 ```
 
-### Lin-Rules
+### Lin - Detectors
 
-Add the rules module dependencies to your project and the dsl module as part of the lint classpath:
+Add the `detectors` module dependencies to your project and the `dsl` module as part of the lint classpath:
 
 ```groovy
 dependencies {
-    lintChecks 'com.serchinastico.lin:rules:0.0.1'
+    lintChecks 'com.serchinastico.lin:detectors:0.0.1'
     lintClassPath 'com.serchinastico.lin:dsl:0.0.1'
 }
 ```
 
-### Lin-DSL
+### Lin - DSL (Domain Specific Language)
 
-If you want to write your own rules just add the dsl and annotations modules to your linting project:
+If you want to write your own detectors just add the `dsl` and `annotations` modules to your linting project:
 
 ```groovy
 dependencies {
@@ -46,16 +46,16 @@ dependencies {
 }
 ```
 
-## How to write your own rules
+## How to write your own detectors
 
-Lin offers a DSL (Domain Specific Language) to write your own rules easily. The API is focused on representing your rules as concisely as possible. Let's bisect an example of a rule to understand how it works:
+Lin offers a DSL (Domain Specific Language) to write your own detectors easily. The API is focused on representing your rules as concisely as possible. Let's bisect an example of a detector to understand how it works:
 
 ```kotlin
-@Rule
-fun noElseInSwitchWithEnumOrSealed() = rule(
+@Detector
+fun noElseInSwitchWithEnumOrSealed() = detector(
     // Define the issue:
     issue(
-        // 1. What files should the rule check
+        // 1. What files should the detector check
         Scope.JAVA_FILE_SCOPE,
         // 2. A brief description of the issue
         "There should not be else/default branches on a switch statement checking for enum/sealed class values",
@@ -72,7 +72,7 @@ fun noElseInSwitchWithEnumOrSealed() = rule(
      * your rule to report an issue.
      * The best way to see what nodes you have
      * available is by using your IDE autocomplete
-     * function
+     * function.
     */
     switch {
         suchThat { node ->
@@ -86,4 +86,37 @@ fun noElseInSwitchWithEnumOrSealed() = rule(
         }
     }
 }
+```
+
+### Quantifiers
+
+You can specify your rules using quantifiers, that is, numeric restrictions to how many times you are expecting a specific rule to appear in order to be reported.
+
+```kotlin
+@Detector
+fun noMoreThanOneGsonInstance() = detector(
+    issue(
+        Scope.JAVA_FILE_SCOPE,
+        "Gson should only be initialized only once",
+        """Creating multiple instances of Gson may hurt performance and it's a common mistake to instantiate it for
+            | simple serialization/deserialization. Use a single instance, be it with a classic singleton pattern or
+            | other mechanism your dependency injector framework provides. This way you can also share the common
+            | type adapters.
+        """.trimMargin(),
+        Category.PERFORMANCE
+    ),
+    // We can use anyOf to report if any of the rules
+    // included is found.
+    anyOf(
+        // This rule will only report if more than one
+        // file has any call expression matching the 
+        // suchThat predicate.
+        file(moreThan(1)) { callExpression { suchThat { it.isGsonConstructor } } },
+        // On the other hand, this rule will only 
+        // report if there is any file with more than
+        // one call expression matching the suchThat
+        // predicate.
+        file { callExpression(moreThan(1)) { suchThat { it.isGsonConstructor } } }
+    )
+)
 ```
