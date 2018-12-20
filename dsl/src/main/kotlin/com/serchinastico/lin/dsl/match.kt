@@ -35,8 +35,8 @@ fun LinRule<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
     return superClasses.toList()
 }
 
-private fun matchesAll(codeNodes: List<TreeNode>, ruleNodes: List<LinRule<UElement>>): Boolean =
-    matchesAll(codeNodes, ruleNodes, emptyMap())
+private fun matchesAll(codeNodes: List<TreeNode>, rules: List<LinRule<UElement>>): Boolean =
+    matchesAll(codeNodes, rules, emptyMap())
 
 private fun matchesAll(
     codeNodes: List<TreeNode>,
@@ -57,18 +57,18 @@ private fun matchesAll(
     val headCodeNode = codeNodes.first()
     val tailCodeNodes = codeNodes.drop(1)
 
-    val applicableRuleNodes = rules.filter { it.elementType.isSuperclassOf(headCodeNode.element::class) }
+    val applicableRules = rules.filter { it.elementType.isSuperclassOf(headCodeNode.element::class) }
 
     // We first check if there is any rule that is impossible to continue matching
     // e.g. All rule failing, Times rule greater than its counter
-    val isPossibleToContinueMatching = applicableRuleNodes
+    val isPossibleToContinueMatching = applicableRules
         .all { it.isPossibleToContinueMatching(headCodeNode.element, quantifierCounters) }
 
     if (!isPossibleToContinueMatching) {
         return false
     }
 
-    return applicableRuleNodes
+    return applicableRules
         .filter { it.matches(headCodeNode.element, quantifierCounters) }
         .any { ruleNode ->
             when (ruleNode.quantifier) {
