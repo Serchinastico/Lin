@@ -11,6 +11,7 @@ class LinIssueRegistry : IssueRegistry() {
         NoPublicViewPropertiesDetector.issue,
         NoSetOnClickListenerCallsDetector.issue,
         NoMoreThanOneGsonInstanceDetector.issue,
-        NoMoreThanOneDateInstanceDetector.issue
+        NoMoreThanOneDateInstanceDetector.issue,
+        OnlyConstantsInTypeDetector.issue
     )
 }

@@ -83,7 +83,6 @@ class NoSetOnClickListenerCallsDetectorTest : LintTest {
         ) toHave NoErrors
     }
 
-
     @Test
     fun inKotlinClass_whenCallIsSetOnClickListener_detectsError() {
         expect(
