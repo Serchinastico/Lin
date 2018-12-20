@@ -19,8 +19,6 @@ fun noDataFrameworksFromAndroidClass() = rule(
         Category.INTEROPERABILITY
     )
 ) {
-    file {
-        import { suchThat { it.isFrameworkLibraryImport } }
-        type { suchThat { node -> node.uastSuperTypes.any { it.isAndroidFrameworkType } } }
-    }
+    import { suchThat { it.isFrameworkLibraryImport } }
+    type { suchThat { node -> node.uastSuperTypes.any { it.isAndroidFrameworkType } } }
 }

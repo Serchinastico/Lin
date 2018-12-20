@@ -15,7 +15,7 @@ fun noElseInSwitchWithEnumOrSealed() = rule(
         Category.CORRECTNESS
     )
 ) {
-    switch {
+    switchExpression {
         suchThat { node ->
             val classReferenceType = node.expression?.getExpressionType() ?: (return@suchThat false)
 

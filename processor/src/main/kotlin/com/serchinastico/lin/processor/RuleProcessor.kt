@@ -58,6 +58,7 @@ class RuleProcessor : AbstractProcessor() {
 
                 val className = "${issueId}Detector"
                 val ruleFile = FileSpec.builder(packageName, className)
+                    .addImport("com.serchinastico.lin.dsl", "LinVisitor")
                     .addImport("com.serchinastico.lin.dsl", "report")
                     .addType(
                         TypeSpec.classBuilder(className)
@@ -176,42 +177,13 @@ class RuleProcessor : AbstractProcessor() {
                     .addShouldReportFunction()
                     .build()
             )
-            .addFunction(
-                FunSpec.builder("visitSwitchExpression")
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter(
-                        "node",
-                        ClassName("org.jetbrains.uast", "USwitchExpression")
-                    )
-                    .addShouldReportFunction()
-                    .build()
-            )
-            .addFunction(
-                FunSpec.builder("visitCallExpression")
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter(
-                        "node",
-                        ClassName("org.jetbrains.uast", "UCallExpression")
-                    )
-                    .addShouldReportFunction()
-                    .build()
-            )
-            .addFunction(
-                FunSpec.builder("visitField")
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter(
-                        "node",
-                        ClassName("org.jetbrains.uast", "UField")
-                    )
-                    .addShouldReportFunction()
-                    .build()
-            )
             .build()
 
     private fun FunSpec.Builder.addShouldReportFunction(): FunSpec.Builder =
         addCode(
-            """
-                |if (rule.shouldReport(node)) {
+            """ |val visitor = LinVisitor(rule)
+                |node.accept(visitor)
+                |if (visitor.shouldReport) {
                 |   context.report(issue)
                 |}
             """.trimMargin()

@@ -19,7 +19,7 @@ fun noSetOnClickListenerCalls() = rule(
         Category.CORRECTNESS
     )
 ) {
-    call {
+    callExpression {
         suchThat { node ->
             val receiverType = node.receiverType ?: (return@suchThat false)
 
