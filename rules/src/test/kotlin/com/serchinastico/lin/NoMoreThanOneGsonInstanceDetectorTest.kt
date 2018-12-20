@@ -78,7 +78,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
                 |
                 |import com.google.gson.Gson;
                 |
-                |class TestClass {
+                |class TestClass1 {
                 |   public void main(String[] args) {
                 |       new Gson();
                 |   }
@@ -89,13 +89,13 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
                 |
                 |import com.google.gson.Gson;
                 |
-                |class TestClass {
+                |class TestClass2 {
                 |   public void main(String[] args) {
                 |       new Gson();
                 |   }
                 |}
             """.inJava
-        ) toHave SomeError("src/foo/TestClass.java")
+        ) toHave SomeError("project0")
     }
 
     @Test
@@ -160,7 +160,7 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
                 |
                 |import com.google.gson.Gson
                 |
-                |class TestClass {
+                |class TestClass1 {
                 |   public fun main(args: Array<String>) {
                 |       Gson()
                 |   }
@@ -171,12 +171,12 @@ class NoMoreThanOneGsonInstanceDetectorTest : LintTest {
                 |
                 |import com.google.gson.Gson
                 |
-                |class TestClass {
+                |class TestClass2 {
                 |   public fun main(args: Array<String>) {
                 |       Gson()
                 |   }
                 |}
             """.inKotlin
-        ) toHave SomeError("src/foo/TestClass.kt")
+        ) toHave SomeError("project0")
     }
 }

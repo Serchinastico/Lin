@@ -4,6 +4,7 @@ import com.google.auto.service.AutoService
 import com.serchinastico.lin.annotations.Rule
 import com.serchinastico.lin.dsl.IssueBuilder
 import com.serchinastico.lin.dsl.LinRule
+import com.serchinastico.lin.dsl.LinVisitor
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import javax.annotation.processing.*
@@ -69,8 +70,11 @@ class RuleProcessor : AbstractProcessor() {
                                     .addIssueBuilderProperty()
                                     .addIssueProperty(className)
                             }
+                            .addVisitorProperty()
+                            .addDidReportFileVisitor()
                             .addGetApplicableFilesFunction()
                             .addGetApplicableUastTypes()
+                            .addAfterCheckEachProject()
                             .addCreateUastHandler()
                             .build()
                     )
@@ -128,6 +132,21 @@ class RuleProcessor : AbstractProcessor() {
                 .build()
         )
 
+    private fun TypeSpec.Builder.addVisitorProperty(): TypeSpec.Builder =
+        addProperty(
+            PropertySpec.builder("projectVisitor", LinVisitor::class)
+                .initializer("LinVisitor(rule)")
+                .build()
+        )
+
+    private fun TypeSpec.Builder.addDidReportFileVisitor(): TypeSpec.Builder =
+        addProperty(
+            PropertySpec.builder("didReportWithFileVisitor", Boolean::class)
+                .mutable(true)
+                .initializer("false")
+                .build()
+        )
+
     private fun TypeSpec.Builder.addGetApplicableFilesFunction(): TypeSpec.Builder =
         addFunction(
             FunSpec.builder("getApplicableFiles")
@@ -143,6 +162,24 @@ class RuleProcessor : AbstractProcessor() {
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode("return rule.applicableTypes")
                 .returns(LIST_CLASS_NAME.parameterizedBy(CLASS_CLASS_NAME.parameterizedBy(U_ELEMENT_OUT_CLASS_NAME)))
+                .build()
+        )
+
+    private fun TypeSpec.Builder.addAfterCheckEachProject(): TypeSpec.Builder =
+        addFunction(
+            FunSpec.builder("afterCheckEachProject")
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter(
+                    "context",
+                    ClassName("com.android.tools.lint.detector.api", "Context")
+                )
+                .addCode(
+                    """
+                        |if (!didReportWithFileVisitor && projectVisitor.shouldReport) {
+                        |   context.report(issue)
+                        |}
+                    """.trimMargin()
+                )
                 .build()
         )
 
@@ -181,11 +218,13 @@ class RuleProcessor : AbstractProcessor() {
 
     private fun FunSpec.Builder.addShouldReportFunction(): FunSpec.Builder =
         addCode(
-            """ |val visitor = LinVisitor(rule)
-                |node.accept(visitor)
-                |if (visitor.shouldReport) {
+            """ |val fileVisitor = LinVisitor(rule)
+                |node.accept(fileVisitor)
+                |if (fileVisitor.shouldReport) {
                 |   context.report(issue)
+                |   didReportWithFileVisitor = true
                 |}
+                |projectVisitor += fileVisitor
             """.trimMargin()
         )
 

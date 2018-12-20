@@ -6,9 +6,9 @@ import kotlin.reflect.full.isSuperclassOf
 
 
 data class TreeNode(
-    val children: MutableList<TreeNode>,
+    val element: UElement,
     var parent: TreeNode?,
-    val element: UElement
+    val children: MutableList<TreeNode>
 ) {
     override fun toString(): String {
         return "TreeNode(children=$children, element=$element)"
@@ -20,7 +20,7 @@ typealias Counters = Map<Quantifier, Int>
 fun Counters.getCount(quantifier: Quantifier): Int = this.getOrDefault(quantifier, 0)
 fun Counters.plusOne(quantifier: Quantifier): Counters = plus(quantifier to getCount(quantifier) + 1)
 
-fun LinNode<UElement>.matches(code: TreeNode): Boolean = matches(listOf(code), listOf(this))
+fun LinNode<UElement>.matches(code: List<TreeNode>): Boolean = matches(code, listOf(this))
 
 fun LinNode<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
     val superClasses = mutableSetOf<KClass<out UElement>>()
@@ -62,9 +62,9 @@ private fun matches(
     // We first check if there is any rule that is impossible to continue matching
     // e.g. All rule failing, Times rule greater than its counter
     val isPossibleToContinueMatching = applicableRuleNodes
-        .any { !it.isPossibleToContinueMatching(headCodeNode.element, quantifierCounters) }
+        .all { it.isPossibleToContinueMatching(headCodeNode.element, quantifierCounters) }
 
-    if (isPossibleToContinueMatching) {
+    if (!isPossibleToContinueMatching) {
         return false
     }
 
@@ -76,7 +76,7 @@ private fun matches(
                         matches(tailCodeNodes, ruleNodes, quantifierCounters)
                 Quantifier.Any -> matches(headCodeNode.children, ruleNode.children, quantifierCounters) &&
                         matches(tailCodeNodes, ruleNodes.minus(ruleNode), quantifierCounters)
-                is Quantifier.Times, is Quantifier.MoreThan, is Quantifier.LessThan ->
+                is Quantifier.Times, is Quantifier.AtLeast, is Quantifier.AtMost ->
                     matches(headCodeNode.children, ruleNode.children, quantifierCounters) &&
                             matches(tailCodeNodes, ruleNodes, quantifierCounters.plusOne(ruleNode.quantifier))
             }
@@ -89,8 +89,8 @@ private fun Counters.allQualifiersMeetRequirements(rules: List<LinNode<UElement>
     when (quantifier) {
         Quantifier.All, Quantifier.Any -> true
         is Quantifier.Times -> getCount(quantifier) == quantifier.times
-        is Quantifier.MoreThan -> getCount(quantifier) > quantifier.times
-        is Quantifier.LessThan -> getCount(quantifier) < quantifier.times
+        is Quantifier.AtLeast -> getCount(quantifier) >= quantifier.times
+        is Quantifier.AtMost -> getCount(quantifier) <= quantifier.times
     }
 }
 
@@ -101,8 +101,8 @@ private fun LinNode<UElement>.isPossibleToContinueMatching(
     when (it) {
         Quantifier.All -> ruleMatchesAll(this, element)
         is Quantifier.Times -> quantifierCounters.getCount(it) < it.times
-        is Quantifier.LessThan -> quantifierCounters.getCount(it) < it.times - 1
-        Quantifier.Any, is Quantifier.MoreThan -> true
+        is Quantifier.AtMost -> quantifierCounters.getCount(it) < it.times
+        Quantifier.Any, is Quantifier.AtLeast -> true
     }
 }
 
@@ -116,8 +116,8 @@ private fun LinNode<UElement>.matches(
             Quantifier.All -> ruleMatchesAll(this, element)
             Quantifier.Any -> ruleMatchesAny(this, element)
             is Quantifier.Times -> ruleMatchTimes(this, element, quantifierCounters, quantifier)
-            is Quantifier.MoreThan -> ruleMatchMoreThan(this, element)
-            is Quantifier.LessThan -> ruleMatchLessThan(this, element, quantifierCounters, quantifier)
+            is Quantifier.AtLeast -> ruleMatchAtLeast(this, element)
+            is Quantifier.AtMost -> ruleMatchAtMost(this, element, quantifierCounters, quantifier)
         }
     }
 }
@@ -145,16 +145,16 @@ private fun ruleMatchTimes(
     return quantifierCounters.getCount(quantifier) < quantifier.times
 }
 
-private fun ruleMatchMoreThan(
+private fun ruleMatchAtLeast(
     rule: LinNode<UElement>,
     element: UElement
 ): Boolean = rule.reportingPredicate(element)
 
-private fun ruleMatchLessThan(
+private fun ruleMatchAtMost(
     rule: LinNode<UElement>,
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>,
-    quantifier: Quantifier.LessThan
+    quantifier: Quantifier.AtMost
 ): Boolean {
     if (!rule.reportingPredicate(element)) {
         return false

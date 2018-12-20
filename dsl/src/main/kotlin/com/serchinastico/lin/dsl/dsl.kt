@@ -13,17 +13,14 @@ fun rule(
     issueBuilder: IssueBuilder,
     quantifier: Quantifier = Quantifier.Any,
     block: LinNode.File.() -> LinNode<*>
-): LinRule =
-    LinRule(issueBuilder, LinNode.File().block().also { it.quantifier = quantifier })
+): LinRule = LinRule(issueBuilder, LinNode.File().block().also { it.quantifier = quantifier })
 
 fun issue(
     scope: EnumSet<Scope>,
     description: String,
     explanation: String,
     category: Category
-): IssueBuilder {
-    return IssueBuilder(scope, description, explanation, category)
-}
+): IssueBuilder = IssueBuilder(scope, description, explanation, category)
 
 data class IssueBuilder(
     val scope: EnumSet<Scope>,
@@ -49,8 +46,8 @@ sealed class Quantifier {
     object All : Quantifier()
     object Any : Quantifier()
     data class Times(val times: Int) : Quantifier()
-    data class LessThan(val times: Int) : Quantifier()
-    data class MoreThan(val times: Int) : Quantifier()
+    data class AtMost(val times: Int) : Quantifier()
+    data class AtLeast(val times: Int) : Quantifier()
 }
 
 sealed class LinNode<out T : UElement>(val elementType: KClass<out T>) {
