@@ -120,3 +120,16 @@ fun noMoreThanOneGsonInstance() = detector(
     )
 )
 ```
+
+The list of available quantifiers is:
+
+```kotlin
+val any                  // The default quantifier, if a rule matches any number of times then it's reported
+val all                  // It should appear in every single appearance of the node
+fun times(times: Int)    // Match the rule an exact number of "times"
+fun atMost(times: Int)   // matches <= "times"
+fun atLeast(times: Int)  // matches >= "times"
+fun lessThan(times: Int) // matches < "times"
+fun moreThan(times: Int) // matches > "times"
+val none                 // No matches
+```
