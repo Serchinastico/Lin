@@ -3,7 +3,7 @@ package com.serchinastico.lin.rules
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Rule
-import com.serchinastico.lin.dsl.Quantifier.AtLeast
+import com.serchinastico.lin.dsl.Quantifier.Companion.atLeast
 import com.serchinastico.lin.dsl.issue
 import com.serchinastico.lin.dsl.rule
 import org.jetbrains.uast.UCallExpression
@@ -21,7 +21,7 @@ fun noMoreThanOneGsonInstance() = rule(
         """.trimMargin(),
         Category.PERFORMANCE
     ),
-    AtLeast(2)
+    atLeast(2)
 ) { callExpression { suchThat { it.isGsonConstructor } } }
 
 private val UCallExpression.isGsonConstructor: Boolean

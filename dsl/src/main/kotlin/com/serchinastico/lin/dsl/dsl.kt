@@ -48,6 +48,17 @@ sealed class Quantifier {
     data class Times(val times: Int) : Quantifier()
     data class AtMost(val times: Int) : Quantifier()
     data class AtLeast(val times: Int) : Quantifier()
+
+    companion object {
+        val all = All
+        val any = Any
+        fun times(times: Int) = Times(times)
+        fun atMost(times: Int) = AtMost(times)
+        fun atLeast(times: Int) = AtLeast(times)
+        fun lessThan(times: Int) = AtMost(times - 1)
+        fun moreThan(times: Int) = AtLeast(times + 1)
+        val none = times(0)
+    }
 }
 
 sealed class LinNode<out T : UElement>(val elementType: KClass<out T>) {
