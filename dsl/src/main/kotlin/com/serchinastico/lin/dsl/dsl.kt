@@ -74,14 +74,27 @@ sealed class Quantifier {
 fun file(quantifier: Quantifier = Quantifier.Any, block: LinRule.File.() -> LinRule<UFile>) =
     LinRule.File().block().also { it.quantifier = quantifier }
 
+typealias CustomParameters = Map<String, String>
+
 sealed class LinRule<out T : UElement>(val elementType: KClass<out T>) {
 
     var children = mutableListOf<LinRule<*>>()
-    var reportingPredicate: (UElement) -> Boolean = { true }
+    var reportingPredicate: (UElement, CustomParameters) -> Boolean = { _, _ -> true }
     var quantifier: Quantifier = Quantifier.Any
+    var customParametersMap: (UElement, CustomParameters) -> CustomParameters = { _, params -> params }
 
     fun suchThat(predicate: (T) -> Boolean): LinRule<T> {
-        reportingPredicate = { predicate(it as T) }
+        reportingPredicate = { element, _ -> predicate(element as T) }
+        return this
+    }
+
+    fun suchThatParams(predicate: (T, CustomParameters) -> Boolean): LinRule<T> {
+        reportingPredicate = { element, params -> predicate(element as T, params) }
+        return this
+    }
+
+    fun mappingParameters(map: (T, CustomParameters) -> CustomParameters): LinRule<T> {
+        customParametersMap = { element, params -> map(element as T, params) }
         return this
     }
 

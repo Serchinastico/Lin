@@ -36,12 +36,13 @@ fun LinRule<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
 }
 
 private fun matchesAll(codeNodes: List<TreeNode>, rules: List<LinRule<UElement>>): Boolean =
-    matchesAll(codeNodes, rules, emptyMap())
+    matchesAll(codeNodes, rules, emptyMap(), emptyMap())
 
 private fun matchesAll(
     codeNodes: List<TreeNode>,
     rules: List<LinRule<UElement>>,
-    quantifierCounters: Map<Quantifier, Int>
+    quantifierCounters: Map<Quantifier, Int>,
+    params: CustomParameters
 ): Boolean {
     // We finished processing rules and found a match, we succeeded as long as quantifiers match their requirements
     if (rules.isEmpty()) {
@@ -62,26 +63,49 @@ private fun matchesAll(
     // We first check if there is any rule that is impossible to continue matching
     // e.g. All rule failing, Times rule greater than its counter
     val isPossibleToContinueMatching = applicableRules
-        .all { it.isPossibleToContinueMatching(headCodeNode.element, quantifierCounters) }
+        .all { it.isPossibleToContinueMatching(headCodeNode.element, quantifierCounters, params) }
 
     if (!isPossibleToContinueMatching) {
         return false
     }
 
     return applicableRules
-        .filter { it.matches(headCodeNode.element, quantifierCounters) }
-        .any { ruleNode ->
-            when (ruleNode.quantifier) {
-                Quantifier.All -> matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                        matchesAll(tailCodeNodes, rules, quantifierCounters)
-                Quantifier.Any -> matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                        matchesAll(tailCodeNodes, rules.minus(ruleNode), quantifierCounters)
-                is Quantifier.Times, is Quantifier.AtLeast, is Quantifier.AtMost ->
-                    matchesAll(headCodeNode.children, ruleNode.children, quantifierCounters) &&
-                            matchesAll(tailCodeNodes, rules, quantifierCounters.plusOne(ruleNode.quantifier))
-            }
-        } || ((rules.none { it.quantifier == Quantifier.All } &&
-            matchesAll(tailCodeNodes, rules, quantifierCounters)))
+        .filter { it.matches(headCodeNode.element, quantifierCounters, params) }
+        .any { it.matchesChildren(headCodeNode, tailCodeNodes, rules, quantifierCounters, params) }
+            || ((rules.none { it.quantifier == Quantifier.All } &&
+            matchesAll(tailCodeNodes, rules, quantifierCounters, params)))
+}
+
+private fun LinRule<UElement>.matchesChildren(
+    head: TreeNode,
+    tail: List<TreeNode>,
+    rules: List<LinRule<UElement>>,
+    quantifierCounters: Map<Quantifier, Int>,
+    params: CustomParameters
+): Boolean {
+    val nextParams = customParametersMap(head.element, params)
+    return when (quantifier) {
+        Quantifier.All -> matchesAll(
+            head.children,
+            children,
+            quantifierCounters,
+            nextParams
+        ) && matchesAll(tail, rules, quantifierCounters, nextParams)
+        Quantifier.Any -> matchesAll(
+            head.children,
+            children,
+            quantifierCounters,
+            nextParams
+        ) && matchesAll(tail, rules.minus(this), quantifierCounters, nextParams)
+        is Quantifier.Times, is Quantifier.AtLeast, is Quantifier.AtMost ->
+            matchesAll(head.children, children, quantifierCounters, nextParams) &&
+                    matchesAll(
+                        tail,
+                        rules,
+                        quantifierCounters.plusOne(quantifier),
+                        nextParams
+                    )
+    }
 }
 
 private fun Counters.allQualifiersMeetRequirements(rules: List<LinRule<UElement>>): Boolean = rules.all { rule ->
@@ -96,10 +120,11 @@ private fun Counters.allQualifiersMeetRequirements(rules: List<LinRule<UElement>
 
 private fun LinRule<UElement>.isPossibleToContinueMatching(
     element: UElement,
-    quantifierCounters: Map<Quantifier, Int>
+    quantifierCounters: Map<Quantifier, Int>,
+    params: CustomParameters
 ): Boolean = quantifier.let {
     when (it) {
-        Quantifier.All -> ruleMatchesAll(this, element)
+        Quantifier.All -> ruleMatchesAll(this, element, params)
         is Quantifier.Times -> quantifierCounters.getCount(it) < it.times
         is Quantifier.AtMost -> quantifierCounters.getCount(it) < it.times
         Quantifier.Any, is Quantifier.AtLeast -> true
@@ -109,36 +134,40 @@ private fun LinRule<UElement>.isPossibleToContinueMatching(
 private val matchesMemoizedValues = mutableMapOf<Triple<LinRule<UElement>, UElement, Counters>, Boolean>()
 private fun LinRule<UElement>.matches(
     element: UElement,
-    quantifierCounters: Map<Quantifier, Int>
+    quantifierCounters: Map<Quantifier, Int>,
+    params: CustomParameters
 ): Boolean = matchesMemoizedValues.getOrPut(Triple(this, element, quantifierCounters)) {
     quantifier.let { quantifier ->
         return when (quantifier) {
-            Quantifier.All -> ruleMatchesAll(this, element)
-            Quantifier.Any -> ruleMatchesAny(this, element)
-            is Quantifier.Times -> ruleMatchTimes(this, element, quantifierCounters, quantifier)
-            is Quantifier.AtLeast -> ruleMatchAtLeast(this, element)
-            is Quantifier.AtMost -> ruleMatchAtMost(this, element, quantifierCounters, quantifier)
+            Quantifier.All -> ruleMatchesAll(this, element, params)
+            Quantifier.Any -> ruleMatchesAny(this, element, params)
+            is Quantifier.Times -> ruleMatchTimes(this, element, quantifierCounters, quantifier, params)
+            is Quantifier.AtLeast -> ruleMatchAtLeast(this, element, params)
+            is Quantifier.AtMost -> ruleMatchAtMost(this, element, quantifierCounters, quantifier, params)
         }
     }
 }
 
 private fun ruleMatchesAll(
     rule: LinRule<UElement>,
-    element: UElement
-): Boolean = rule.reportingPredicate(element)
+    element: UElement,
+    params: CustomParameters
+): Boolean = rule.reportingPredicate(element, params)
 
 private fun ruleMatchesAny(
     rule: LinRule<UElement>,
-    element: UElement
-): Boolean = rule.reportingPredicate(element)
+    element: UElement,
+    params: CustomParameters
+): Boolean = rule.reportingPredicate(element, params)
 
 private fun ruleMatchTimes(
     rule: LinRule<UElement>,
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>,
-    quantifier: Quantifier.Times
+    quantifier: Quantifier.Times,
+    params: CustomParameters
 ): Boolean {
-    if (!rule.reportingPredicate(element)) {
+    if (!rule.reportingPredicate(element, params)) {
         return false
     }
 
@@ -147,16 +176,18 @@ private fun ruleMatchTimes(
 
 private fun ruleMatchAtLeast(
     rule: LinRule<UElement>,
-    element: UElement
-): Boolean = rule.reportingPredicate(element)
+    element: UElement,
+    params: CustomParameters
+): Boolean = rule.reportingPredicate(element, params)
 
 private fun ruleMatchAtMost(
     rule: LinRule<UElement>,
     element: UElement,
     quantifierCounters: Map<Quantifier, Int>,
-    quantifier: Quantifier.AtMost
+    quantifier: Quantifier.AtMost,
+    params: CustomParameters
 ): Boolean {
-    if (!rule.reportingPredicate(element)) {
+    if (!rule.reportingPredicate(element, params)) {
         return false
     }
 
