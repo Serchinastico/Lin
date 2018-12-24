@@ -74,14 +74,20 @@ sealed class Quantifier {
 fun file(quantifier: Quantifier = Quantifier.Any, block: LinRule.File.() -> LinRule<UFile>) =
     LinRule.File().block().also { it.quantifier = quantifier }
 
+typealias Storage = MutableMap<String, String>
+
+interface LinContext {
+    val storage: Storage
+}
+
 sealed class LinRule<out T : UElement>(val elementType: KClass<out T>) {
 
     var children = mutableListOf<LinRule<*>>()
-    var reportingPredicate: (UElement) -> Boolean = { true }
+    var reportingPredicate: LinContext.(UElement) -> Boolean = { true }
     var quantifier: Quantifier = Quantifier.Any
 
-    fun suchThat(predicate: (T) -> Boolean): LinRule<T> {
-        reportingPredicate = { predicate(it as T) }
+    fun suchThat(predicate: LinContext.(T) -> Boolean): LinRule<T> {
+        reportingPredicate = { element -> predicate(element as T) }
         return this
     }
 
