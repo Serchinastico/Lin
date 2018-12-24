@@ -30,8 +30,8 @@ Add the `detectors` module dependencies to your project and the `dsl` module as 
 
 ```groovy
 dependencies {
-    lintChecks 'com.serchinastico.lin:detectors:0.0.1'
-    lintClassPath 'com.serchinastico.lin:dsl:0.0.1'
+    lintChecks 'com.serchinastico.lin:detectors:0.0.2'
+    lintClassPath 'com.serchinastico.lin:dsl:0.0.2'
 }
 ```
 
@@ -41,8 +41,8 @@ If you want to write your own detectors just add the `dsl` and `annotations` mod
 
 ```groovy
 dependencies {
-    compileOnly 'com.serchinastico.lin:dsl:0.0.1'
-    compileOnly 'com.serchinastico.lin:annotations:0.0.1'
+    compileOnly 'com.serchinastico.lin:dsl:0.0.2'
+    compileOnly 'com.serchinastico.lin:annotations:0.0.2'
 }
 ```
 
@@ -174,7 +174,7 @@ Because Lin uses backtracking on the process of finding the best match for rules
 }
 ```
 
-The `storage` property is just a `MutableMap<String, String>`. The matching algorithm takes care of keeping the map in a coherent state while doing the search so that you won't find values stored in failing rules.
+The `storage` property is just a `MutableMap<String, String>`. The matching algorithm takes care of keeping the map in a coherent state while doing the search so that you won't find values stored in failing rules. **All siblings and child nodes will see stored values.**
 
 It's also important to keep in mind that Lin will try to match rules in any order. The most important implication is that even if you define a rule in a specific order Lin might find matches in the opposite:
 
