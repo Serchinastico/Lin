@@ -18,7 +18,7 @@ fun noPublicViewProperties() = detector(
                 | information to other classes and is prompt to break if the inner implementation of
                 | the layout changes, the only exception is if those views are part of an implemented
                 | interface""".trimMargin(),
-        Category(null, "Lin", 5)
+        Category.Lin
     )
 ) {
     field { suchThat { it.isNonPrivateViewField } }

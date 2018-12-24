@@ -16,7 +16,7 @@ fun noDataFrameworksFromAndroidClass() = detector(
                 | Android related view.""".trimMargin(),
         """Your Android classes should not be responsible for retrieving or storing information, that should be
                 | responsibility of another classes.""".trimMargin(),
-        Category(null, "Lin", 5)
+        Category.Lin
     )
 ) {
     import { suchThat { it.isFrameworkLibraryImport } }

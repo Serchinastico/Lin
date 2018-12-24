@@ -14,7 +14,7 @@ fun noPrintStackTraceCalls() = detector(
         Scope.JAVA_FILE_SCOPE,
         "There should not be calls to the printStackTrace method in Throwable instances",
         "Errors should be logged with a configured logger or sent to the backend for faster response",
-        Category(null, "Lin", 5)
+        Category.Lin
     )
 ) {
     callExpression { suchThat { it.isPrintStackTraceCall } }

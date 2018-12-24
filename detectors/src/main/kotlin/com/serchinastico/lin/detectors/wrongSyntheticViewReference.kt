@@ -21,11 +21,12 @@ fun wrongSyntheticViewReference() = detector(
             | or its ancestor classes is mostly a typo. If you want to reference views from custom views abstract them
             | with methods in order to keep a low coupling with its specific implementation.
         """.trimMargin(),
-        Category(null, "Lin", 5)
+        Category.Lin
     )
 ) {
     import {
         suchThat {
+
             val importedLayout = storeImportedLayout(it) ?: return@suchThat false
             storage["Imported Layout"] = importedLayout
             it.isSyntheticViewImport

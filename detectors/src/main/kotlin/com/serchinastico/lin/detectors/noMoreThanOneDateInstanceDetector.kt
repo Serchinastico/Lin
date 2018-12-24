@@ -20,7 +20,7 @@ fun noMoreThanOneDateInstance() = detector(
             | classic issue when testing date/time related code. Centralize the creation of date objects on a single
             | class to be able to replace it in testing time.
         """.trimMargin(),
-        Category(null, "Lin", 5)
+        Category.Lin
     ),
     anyOf(
         file(moreThan(1)) { callExpression { suchThat { it.isDateConstructor } } },
