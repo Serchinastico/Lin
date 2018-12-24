@@ -1,6 +1,5 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.detector
@@ -16,8 +15,7 @@ fun noSetOnClickListenerCalls() = detector(
         "There should not be calls to setOnClickListener",
         """Nowadays there are better ways to synthetize these calls into a more concise declaration with tools
             | like ButterKnife or Data Binding. See https://github.com/JakeWharton/butterknife or
-            | https://developer.android.com/topic/libraries/data-binding/""".trimMargin(),
-        Category.Lin
+            | https://developer.android.com/topic/libraries/data-binding/""".trimMargin()
     )
 ) {
     callExpression { suchThat { it.isSetOnClickListenerCall } }

@@ -1,6 +1,5 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.Quantifier.Companion.moreThan
@@ -20,8 +19,7 @@ fun noMoreThanOneGsonInstance() = detector(
             | simple serialization/deserialization. Use a single instance, be it with a classic singleton pattern or
             | other mechanism your dependency injector framework provides. This way you can also share the common
             | type adapters.
-        """.trimMargin(),
-        Category.Lin
+        """.trimMargin()
     ),
     anyOf(
         file(moreThan(1)) { callExpression { suchThat { it.isGsonConstructor } } },

@@ -1,6 +1,5 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.Storage
@@ -20,8 +19,7 @@ fun wrongSyntheticViewReference() = detector(
         """Imports to kotlinx synthetic views other than the ones defined in the layout referenced in this
             | or its ancestor classes is mostly a typo. If you want to reference views from custom views abstract them
             | with methods in order to keep a low coupling with its specific implementation.
-        """.trimMargin(),
-        Category.Lin
+        """.trimMargin()
     )
 ) {
     import {
