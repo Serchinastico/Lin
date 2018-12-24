@@ -21,7 +21,7 @@ class WrongSyntheticViewReferenceDetectorTest : LintTest {
     override val issue = WrongSyntheticViewReferenceDetector.issue
 
     @Test
-    fun inKotlinActivity_whenImportReferencesDifferentLayout_detectsError() {
+    fun inKotlinActivity_whenImportReferencesFromDifferentLayout_detectsError() {
         expect(
             resourcesFile,
             """
@@ -38,7 +38,25 @@ class WrongSyntheticViewReferenceDetectorTest : LintTest {
     }
 
     @Test
-    fun inKotlinActivity_whenImportReferencesSameLayout_detectsNoErrors() {
+    fun inKotlinActivity_whenImportReferencesFromBothSameAndDifferentLayout_detectsError() {
+        expect(
+            resourcesFile,
+            """
+                |package foo
+                |
+                |import foo.R
+                |import kotlinx.android.synthetic.main.activity_test_1.*
+                |import kotlinx.android.synthetic.main.activity_test_2.*
+                |
+                |class TestClass: Activity() {
+                |   override val layoutId = R.layout.activity_test_1
+                |}
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
+    }
+
+    @Test
+    fun inKotlinActivity_whenImportReferencesFromSameLayout_detectsNoErrors() {
         expect(
             resourcesFile,
             """

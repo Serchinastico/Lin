@@ -41,3 +41,16 @@ data class LinVisitor(val detector: LinDetector) : UastVisitor {
         currentNode = currentNode?.parent
     }
 }
+
+fun LinRule<UElement>.allUElementSuperClasses(): List<KClass<out UElement>> {
+    val superClasses = mutableSetOf<KClass<out UElement>>()
+    val nodesToProcess = mutableListOf(this)
+
+    while (nodesToProcess.isNotEmpty()) {
+        val currentNode = nodesToProcess.removeAt(0)
+        superClasses.add(currentNode.elementType)
+        nodesToProcess.addAll(currentNode.children)
+    }
+
+    return superClasses.toList()
+}

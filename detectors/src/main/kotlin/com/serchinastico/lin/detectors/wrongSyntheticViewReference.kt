@@ -3,7 +3,7 @@ package com.serchinastico.lin.detectors
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
-import com.serchinastico.lin.dsl.CustomParameters
+import com.serchinastico.lin.dsl.Storage
 import com.serchinastico.lin.dsl.detector
 import com.serchinastico.lin.dsl.issue
 import org.jetbrains.uast.UExpression
@@ -25,12 +25,16 @@ fun wrongSyntheticViewReference() = detector(
     )
 ) {
     import {
-        suchThat { it.isSyntheticViewImport }
-        mappingParameters(::storeImportedLayout)
+        suchThat {
+            val importedLayout = storeImportedLayout(it) ?: return@suchThat false
+            storage["Imported Layout"] = importedLayout
+            it.isSyntheticViewImport
+        }
     }
 
     expression {
-        suchThatParams(::isDifferentThanImportedLayout)
+        suchThat {
+            it.isDifferentThanImportedLayout(storage) }
     }
 }
 
@@ -40,23 +44,20 @@ private val UImportStatement.isSyntheticViewImport: Boolean
         return KOTLINX_SYNTHETIC_VIEW_IMPORT.matches(importedString)
     }
 
-private fun storeImportedLayout(node: UImportStatement, params: CustomParameters): CustomParameters {
-    val importedString = node.importReference?.asRenderString() ?: return params
-    val importedLayout = KOTLINX_SYNTHETIC_VIEW_IMPORT
+private fun storeImportedLayout(node: UImportStatement): String? {
+    val importedString = node.importReference?.asRenderString() ?: return null
+    return KOTLINX_SYNTHETIC_VIEW_IMPORT
         .matchEntire(importedString)
         ?.groups
         ?.get(1)
-        ?.value ?: return params
-
-    return params.plus("Imported Layout" to importedLayout)
+        ?.value
 }
 
-private fun isDifferentThanImportedLayout(
-    node: UExpression,
-    params: CustomParameters
+private fun UExpression.isDifferentThanImportedLayout(
+    storage: Storage
 ): Boolean {
-    val importedLayout = params["Imported Layout"] ?: return false
-    val usedLayout = LAYOUT_EXPRESSION.matchEntire(node.asRenderString())
+    val importedLayout = storage["Imported Layout"] ?: return false
+    val usedLayout = LAYOUT_EXPRESSION.matchEntire(asRenderString())
         ?.groups
         ?.get(1)
         ?.value ?: return false

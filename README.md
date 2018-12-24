@@ -133,3 +133,64 @@ fun lessThan(times: Int) // matches < "times"
 fun moreThan(times: Int) // matches > "times"
 val none                 // No matches
 ```
+
+### Storage
+
+Lin detectors can store and retrieve information from a provided map. This is really useful if you have dependant rules where one of them might depend on the value of another, e.g. an activity class name having the same name as the layout it renders.
+
+Because Lin uses backtracking on the process of finding the best match for rules **it's highly discouraged to store information by yourself**, intead you should use the `storage` property provided in the `suchThat` block.
+
+```kotlin
+{
+    import {
+        suchThat { node ->
+            val importedString = node.importReference?.asRenderString() ?: return@suchThat false
+            val importedLayout = KOTLINX_SYNTHETIC_VIEW_IMPORT
+                .matchEntire(importedString)
+                ?.groups
+                ?.get(1)
+                ?.value ?: return@suchThat false
+            // Here we have access to the LinContext object that holds
+            // a reference to a map of values where you can store
+            // string values.
+            params["Imported Layout"] = importedLayout
+            it.isSyntheticViewImport
+        }
+    }
+
+    expression {
+        suchThat { node ->
+            // We retrieve the information we stored previously
+            // It's the same value we stored when the rule returned
+            // true so we are sure it's the one we need.
+            val importedLayout = params["Imported Layout"] ?: return@suchThat false
+            val usedLayout = LAYOUT_EXPRESSION.matchEntire(node.asRenderString())
+                ?.groups
+                ?.get(1)
+                ?.value ?: return@suchThat false
+            return usedLayout != importedLayout
+        }
+    }
+}
+```
+
+The `storage` property is just a `MutableMap<String, String>`. The matching algorithm takes care of keeping the map in a coherent state while doing the search so that you won't find values stored in failing rules.
+
+It's also important to keep in mind that Lin will try to match rules in any order. The most important implication is that even if you define a rule in a specific order Lin might find matches in the opposite:
+
+```kotlin
+{
+    expression {
+        suchThat {
+            storage["node"] = it.asRenderString() 
+            true
+        }
+    }
+
+    expression {
+        suchThat { "MyExpression" == storage["node"] }
+    }
+}
+```
+
+Even if the expression storing things in the storage is defined before, that order is not honored when looking for the best match of rules, so it might happen that `storage["node"]` is null.
