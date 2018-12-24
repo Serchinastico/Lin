@@ -175,8 +175,9 @@ class DetectorProcessor : AbstractProcessor() {
                 )
                 .addCode(
                     """
-                        |if (!didReportWithFileVisitor && projectVisitor.shouldReport) {
-                        |   context.report(issue)
+                        |val reportedNodes = projectVisitor.reportedNodes
+                        |if (!didReportWithFileVisitor && reportedNodes.isNotEmpty()) {
+                        |   context.report(issue, reportedNodes.first())
                         |}
                     """.trimMargin()
                 )
@@ -220,8 +221,9 @@ class DetectorProcessor : AbstractProcessor() {
         addCode(
             """ |val fileVisitor = LinVisitor(detector)
                 |node.accept(fileVisitor)
-                |if (fileVisitor.shouldReport) {
-                |   context.report(issue)
+                |val reportedNodes = fileVisitor.reportedNodes
+                |if (reportedNodes.isNotEmpty()) {
+                |   context.report(issue, reportedNodes.first())
                 |   didReportWithFileVisitor = true
                 |}
                 |projectVisitor += fileVisitor

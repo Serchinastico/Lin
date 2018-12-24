@@ -16,8 +16,8 @@ import org.jetbrains.uast.kotlin.KotlinUClass
 
 val Any?.exhaustive get() = Unit
 
-fun Context.report(issue: Issue) {
-    report(issue, Location.create(file), issue.getBriefDescription(TextFormat.TEXT))
+fun Context.report(issue: Issue, source: UElement) {
+    report(issue, Location.create(file).withSource(source), issue.getBriefDescription(TextFormat.TEXT))
 }
 
 val USwitchExpression.clauses: List<USwitchClauseExpression>
