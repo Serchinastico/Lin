@@ -17,7 +17,7 @@ fun noSetOnClickListenerCalls() = detector(
         """Nowadays there are better ways to synthetize these calls into a more concise declaration with tools
             | like ButterKnife or Data Binding. See https://github.com/JakeWharton/butterknife or
             | https://developer.android.com/topic/libraries/data-binding/""".trimMargin(),
-        Category.CORRECTNESS
+        Category(null, "Lin", 5)
     )
 ) {
     callExpression { suchThat { it.isSetOnClickListenerCall } }

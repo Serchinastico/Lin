@@ -21,7 +21,7 @@ fun noMoreThanOneGsonInstance() = detector(
             | other mechanism your dependency injector framework provides. This way you can also share the common
             | type adapters.
         """.trimMargin(),
-        Category.PERFORMANCE
+        Category(null, "Lin", 5)
     ),
     anyOf(
         file(moreThan(1)) { callExpression { suchThat { it.isGsonConstructor } } },

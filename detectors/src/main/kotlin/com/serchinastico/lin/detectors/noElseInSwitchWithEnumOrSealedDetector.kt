@@ -13,7 +13,7 @@ fun noElseInSwitchWithEnumOrSealed() = detector(
         "There should not be else/default branches on a switch statement checking for enum/sealed class values",
         """Adding an else/default branch breaks extensibility because it won't let you know if there is a missing
                 | implementation when adding new types to the enum/sealed class""".trimMargin(),
-        Category.CORRECTNESS
+        Category(null, "Lin", 5)
     )
 ) {
     switchExpression { suchThat { it.hasElseWithEnumOrSealedExpression } }

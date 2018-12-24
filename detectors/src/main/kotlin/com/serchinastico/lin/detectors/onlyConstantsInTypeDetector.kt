@@ -16,7 +16,7 @@ fun onlyConstantsInType() = detector(
             | they are being used instead and, if there is more than one place where the constant is used, move them
             | to wherever they make more sense.
         """.trimMargin(),
-        Category.PERFORMANCE
+        Category(null, "Lin", 5)
     )
 ) {
     type { suchThat { it.onlyHasStaticFinalFields } }

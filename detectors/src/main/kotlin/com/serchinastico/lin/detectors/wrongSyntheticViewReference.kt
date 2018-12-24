@@ -21,7 +21,7 @@ fun wrongSyntheticViewReference() = detector(
             | or its ancestor classes is mostly a typo. If you want to reference views from custom views abstract them
             | with methods in order to keep a low coupling with its specific implementation.
         """.trimMargin(),
-        Category.CORRECTNESS
+        Category(null, "Lin", 5)
     )
 ) {
     import {
