@@ -39,10 +39,10 @@ test.finalizedBy jacocoTestReport
 jar {
     manifest {
         attributes("Lint-Registry-v2": "com.serchinastico.lin.detectors.LinIssueRegistry")
-        attributes("Main-Class": "com.baeldung.fatjar.Application")
+        attributes("Main-Class": "com.serchinastico.lin.detectors.LinIssueRegistry")
     }
 
     from {
-        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.compileOnly.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
