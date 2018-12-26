@@ -65,6 +65,15 @@ val UField.isPrivate: Boolean
         }
     }
 
+val UField.isOverride: Boolean
+    get() = when {
+        language.isJava -> annotations.any { it.qualifiedName == Override::class.qualifiedName }
+        // The only way to see if a property is overriding in kotlin is to see if it has the same
+        // signature than any ancestor class property. This is a quick correct-in-most-cases fix
+        language.isKotlin -> text.contains("override ")
+        else -> false
+    }
+
 val Language.isKotlin: Boolean
     get() = this == Language.findLanguageByID("kotlin")
 val Language.isJava: Boolean

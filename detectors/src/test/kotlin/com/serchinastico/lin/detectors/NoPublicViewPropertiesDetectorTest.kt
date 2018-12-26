@@ -39,6 +39,21 @@ class NoPublicViewPropertiesDetectorTest : LintTest {
         ) toHave SomeError("src/foo/TestClass.java")
     }
 
+    @Test
+    fun inJavaClass_whenViewFieldIsOverriding_detectsNoErrors() {
+        expect(
+            """
+                |package foo;
+                |
+                |import java.lang.Override;
+                |import android.view.View;
+                |
+                |class TestClass {
+                |   @Override View view;
+                |}
+            """.inJava
+        ) toHave NoErrors
+    }
 
     @Test
     fun inKotlinClass_whenViewFieldIsPrivate_detectsNoErrors() {
@@ -68,5 +83,20 @@ class NoPublicViewPropertiesDetectorTest : LintTest {
                 |}
             """.inKotlin
         ) toHave SomeError("src/foo/TestClass.kt")
+    }
+
+    @Test
+    fun inKotlinClass_whenViewFieldIsOverriding_detectsErrors() {
+        expect(
+            """
+                |package foo
+                |
+                |import android.view.View
+                |
+                |class TestClass {
+                |   public override val view: View = View(null)
+                |}
+            """.inKotlin
+        ) toHave NoErrors
     }
 }
