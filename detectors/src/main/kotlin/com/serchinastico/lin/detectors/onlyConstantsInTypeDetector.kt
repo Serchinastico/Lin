@@ -5,6 +5,7 @@ import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.detector
 import com.serchinastico.lin.dsl.issue
 import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UEnumConstant
 
 @Detector
 fun onlyConstantsInType() = detector(
@@ -21,4 +22,7 @@ fun onlyConstantsInType() = detector(
 }
 
 private inline val UClass.onlyHasStaticFinalFields: Boolean
-    get() = methods.all { it.isConstructor } && fields.isNotEmpty() && fields.all { it.isStatic && it.isFinal }
+    get() = methods.isNotEmpty() &&
+            methods.all { it.isConstructor } &&
+            fields.isNotEmpty() &&
+            fields.all { it.isStatic && it.isFinal && it !is UEnumConstant }
