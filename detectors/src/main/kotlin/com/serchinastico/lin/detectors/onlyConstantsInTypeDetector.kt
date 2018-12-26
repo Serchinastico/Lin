@@ -21,4 +21,4 @@ fun onlyConstantsInType() = detector(
 }
 
 private inline val UClass.onlyHasStaticFinalFields: Boolean
-    get() = methods.all { it.isConstructor } && fields.all { it.isStatic && it.isFinal }
+    get() = methods.all { it.isConstructor } && fields.isNotEmpty() && fields.all { it.isStatic && it.isFinal }

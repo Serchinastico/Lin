@@ -114,4 +114,77 @@ class OnlyConstantsInTypeDetectorTest : LintTest {
             """.inKotlin
         ) toHave SomeError("src/foo/TestClass.kt")
     }
+
+    @Test
+    fun inKotlinSealedClass_whenItHasNoFields_detectsNoErrors() {
+        expect(
+            """
+            |package foo
+            |
+            |sealed class ActionStatus<out T> {
+            |    class Ready<out T> : ActionStatus<T>()
+            |    class OnGoing<out T> : ActionStatus<T>()
+            |    class Finished<out T>(val value: T) : ActionStatus<T>()
+            |}
+        """.inKotlin
+        ) toHave NoErrors
+    }
+
+    @Test
+    fun inKotlinInterface_whenItHasNoFields_detectsNoErrors() {
+        expect(
+            """
+            |package foo
+
+            |import okhttp3.RequestBody
+            |import retrofit2.Call
+            |import retrofit2.http.Body
+            |import retrofit2.http.GET
+            |import retrofit2.http.PUT
+            |import retrofit2.http.Path
+            |import retrofit2.http.Query
+            |import retrofit2.http.Url
+            |
+            |interface SomeRetrofitApi {
+            |    @GET("some/url")
+            |    fun someApiCall(
+            |        @Query("param1") param1: String,
+            |        @Query("param2") param2: String
+            |    ): Call<SomeResponse>
+            |}
+            |
+            |typealias SomeResponse = Map<String, Any?>
+        """.inKotlin
+        ) toHave NoErrors
+    }
+
+    @Test
+    fun inKotlinDataClass_whenItHasNoFields_detectsNoErrors() {
+        expect(
+            """
+            |package foo
+            |
+            |import org.joda.time.LocalDate
+            |
+            |typealias SomeMap = Map<LocalDate, List<Answer>>
+            |
+            |data class SomeDataClass(
+            |    val someProperty: String,
+            |    val someOtherProperty: String
+            |)
+            |
+            |data class OtherDataClass(
+            |    val someProperty: String,
+            |    val someOtherProperty: String
+            |)
+            |
+            |data class YetAnotherDataClass(
+            |    val someProperty: String,
+            |    private val someOtherProperty: String
+            |) {
+            |    val someNonConstructorProperty: String = ""
+            |}
+        """.inKotlin
+        ) toHave NoErrors
+    }
 }
