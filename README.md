@@ -31,6 +31,7 @@ Add the `detectors` module dependencies to your project and the `dsl` module as 
 ```groovy
 dependencies {
     lintChecks 'com.serchinastico.lin:detectors:0.0.2'
+    lintClassPath 'com.serchinastico.lin:dsl:0.0.2'
 }
 ```
 
