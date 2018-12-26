@@ -5,7 +5,7 @@ import com.android.tools.lint.detector.api.Issue
 
 class LinIssueRegistry : IssueRegistry() {
     override val api: Int
-        get() = com.android.tools.lint.detector.api.CURRENT_API
+        get() = 0
 
     override val issues: List<Issue> = listOf(
         NoDataFrameworksFromAndroidClassDetector.issue,
