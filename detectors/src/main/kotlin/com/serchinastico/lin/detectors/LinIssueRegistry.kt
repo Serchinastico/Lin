@@ -1,11 +1,15 @@
 package com.serchinastico.lin.detectors
 
 import com.android.tools.lint.client.api.IssueRegistry
+import com.android.tools.lint.detector.api.CURRENT_API
 import com.android.tools.lint.detector.api.Issue
 
 class LinIssueRegistry : IssueRegistry() {
     override val api: Int
-        get() = 0
+        get() = CURRENT_API
+
+    override val minApi: Int
+        get() = -1
 
     override val issues: List<Issue> = listOf(
         NoDataFrameworksFromAndroidClassDetector.issue,
