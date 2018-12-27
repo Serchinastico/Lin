@@ -8,10 +8,10 @@ import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UEnumConstant
 
 @Detector
-fun onlyConstantsInType() = detector(
+fun onlyConstantsInTypeOrFile() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
-        "Using a class to store only constants is bad practice",
+        "Using a class/file to store only constants is bad practice",
         """Classes holding only constant values are often a code smell. Constant values should be placed on the class
             | they are being used instead and, if there is more than one place where the constant is used, move them
             | to wherever they make more sense.
@@ -22,7 +22,6 @@ fun onlyConstantsInType() = detector(
 }
 
 private inline val UClass.onlyHasStaticFinalFields: Boolean
-    get() = methods.isNotEmpty() &&
-            methods.all { it.isConstructor } &&
+    get() = methods.all { it.isConstructor } &&
             fields.isNotEmpty() &&
             fields.all { it.isStatic && it.isFinal && it !is UEnumConstant }

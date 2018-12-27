@@ -1,10 +1,6 @@
 package com.serchinastico.lin.dsl
 
-import com.android.ide.common.blame.SourcePosition
-import com.android.tools.lint.detector.api.Context
-import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.detector.api.Location
-import com.android.tools.lint.detector.api.TextFormat
+import com.android.tools.lint.detector.api.*
 import com.intellij.lang.Language
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -20,7 +16,7 @@ val Any?.exhaustive get() = Unit
 fun Context.report(issue: Issue, position: Location, source: UElement) {
     report(
         issue,
-        Location.create(file, position.start!!, position.end).withSource(source),
+        Location.create(file, position.start ?: DefaultPosition(0, 0, 0), position.end).withSource(source),
         issue.getBriefDescription(TextFormat.TEXT)
     )
 }

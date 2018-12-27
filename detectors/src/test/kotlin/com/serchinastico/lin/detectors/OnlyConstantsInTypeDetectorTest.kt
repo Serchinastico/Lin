@@ -7,7 +7,7 @@ import org.junit.Test
 
 class OnlyConstantsInTypeDetectorTest : LintTest {
 
-    override val issue = OnlyConstantsInTypeDetector.issue
+    override val issue = OnlyConstantsInTypeOrFileDetector.issue
 
     @Test
     fun inJavaClass_whenClassHasMethods_detectsNoErrors() {
@@ -203,12 +203,11 @@ class OnlyConstantsInTypeDetectorTest : LintTest {
     fun inKotlinFile_whenThereIsAGlobalConstant_detectsNoErrors() {
         /*
          * UAST interprets global functions and properties are part of a UClass that is the file.
-         * We are making sure there is at least one constructor in the class which, to my understanding, files can't
-         * have.
+         * As long as there are other things in the file we are considering it ok.
          */
         expect(
             """
-                |package com.curelator.headache.common.storage
+                |package foo
                 |
                 |import android.arch.persistence.room.Database
                 |import android.arch.persistence.room.RoomDatabase
@@ -229,5 +228,20 @@ class OnlyConstantsInTypeDetectorTest : LintTest {
                 |}
             """.inKotlin
         ) toHave NoErrors
+    }
+
+    @Test
+    fun inKotlinFile_whenThereIsOnlyAGlobalConstant_detectsError() {
+        /*
+         * UAST interprets global functions and properties are part of a UClass that is the file.
+         * If the constant is the only thing defined in this "type" then we raise an error.
+         */
+        expect(
+            """
+                |package foo
+                |
+                |const val APP_DATABASE_VERSION = 1
+            """.inKotlin
+        ) toHave SomeError("src/foo/TestClass.kt")
     }
 }

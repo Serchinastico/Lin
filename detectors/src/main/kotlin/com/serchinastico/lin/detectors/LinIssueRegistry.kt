@@ -19,6 +19,6 @@ class LinIssueRegistry : IssueRegistry() {
         NoSetOnClickListenerCallsDetector.issue,
         NoMoreThanOneGsonInstanceDetector.issue,
         NoMoreThanOneDateInstanceDetector.issue,
-        OnlyConstantsInTypeDetector.issue
+        OnlyConstantsInTypeOrFileDetector.issue
     )
 }
