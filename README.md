@@ -30,8 +30,8 @@ Add the `detectors` module dependencies to your project and the `dsl` module as 
 
 ```groovy
 dependencies {
-    lintChecks 'com.serchinastico.lin:detectors:0.0.2'
-    lintClassPath 'com.serchinastico.lin:dsl:0.0.2'
+    lintChecks 'com.serchinastico.lin:detectors:0.0.3'
+    lintClassPath 'com.serchinastico.lin:dsl:0.0.3'
 }
 ```
 
@@ -41,8 +41,8 @@ If you want to write your own detectors just add the `dsl` and `annotations` mod
 
 ```groovy
 dependencies {
-    compileOnly 'com.serchinastico.lin:dsl:0.0.2'
-    compileOnly 'com.serchinastico.lin:annotations:0.0.2'
+    compileOnly 'com.serchinastico.lin:dsl:0.0.3'
+    compileOnly 'com.serchinastico.lin:annotations:0.0.3'
 }
 ```
 
