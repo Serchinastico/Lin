@@ -1,5 +1,6 @@
 package com.serchinastico.lin.dsl
 
+import com.android.ide.common.blame.SourcePosition
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Location
@@ -16,8 +17,12 @@ import org.jetbrains.uast.kotlin.KotlinUClass
 
 val Any?.exhaustive get() = Unit
 
-fun Context.report(issue: Issue, source: UElement) {
-    report(issue, Location.create(file).withSource(source), issue.getBriefDescription(TextFormat.TEXT))
+fun Context.report(issue: Issue, position: Location, source: UElement) {
+    report(
+        issue,
+        Location.create(file, position.start!!, position.end).withSource(source),
+        issue.getBriefDescription(TextFormat.TEXT)
+    )
 }
 
 val USwitchExpression.clauses: List<USwitchClauseExpression>
