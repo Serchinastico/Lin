@@ -1,6 +1,5 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.detector
@@ -15,8 +14,7 @@ fun noDataFrameworksFromAndroidClass() = detector(
         """Framework classes to get or store data should never be called from Activities, Fragments or any other
                 | Android related view.""".trimMargin(),
         """Your Android classes should not be responsible for retrieving or storing information, that should be
-                | responsibility of another classes.""".trimMargin(),
-        Category.INTEROPERABILITY
+                | responsibility of another classes.""".trimMargin()
     )
 ) {
     import { suchThat { it.isFrameworkLibraryImport } }

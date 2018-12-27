@@ -1,6 +1,5 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.Quantifier.Companion.moreThan
@@ -19,8 +18,7 @@ fun noMoreThanOneDateInstance() = detector(
         """Creating multiple instances of Date is an indicator of not injecting your time on your code. That's a
             | classic issue when testing date/time related code. Centralize the creation of date objects on a single
             | class to be able to replace it in testing time.
-        """.trimMargin(),
-        Category.CORRECTNESS
+        """.trimMargin()
     ),
     anyOf(
         file(moreThan(1)) { callExpression { suchThat { it.isDateConstructor } } },

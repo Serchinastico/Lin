@@ -30,6 +30,7 @@ class DetectorProcessor : AbstractProcessor() {
         val UAST_SCANNER_CLASS_NAME = ClassName("com.android.tools.lint.detector.api.Detector", "UastScanner")
         val U_ELEMENT_HANDLER_CLASS_NAME = ClassName("com.android.tools.lint.client.api", "UElementHandler")
         val U_ELEMENT_OUT_CLASS_NAME = WildcardTypeName.producerOf(ClassName("org.jetbrains.uast", "UElement"))
+        val JAVA_CONTEXT_CLASS_NAME = ClassName("com.android.tools.lint.detector.api", "JavaContext")
         val CLASS_CLASS_NAME = ClassName("java.lang", "Class")
         val LIST_CLASS_NAME = ClassName("kotlin.collections", "List")
         val ENUM_SET_CLASS_NAME = ClassName("java.util", "EnumSet")
@@ -71,6 +72,7 @@ class DetectorProcessor : AbstractProcessor() {
                                     .addIssueProperty(className)
                             }
                             .addVisitorProperty()
+                            .addJavaContextProperty()
                             .addDidReportFileVisitor()
                             .addGetApplicableFilesFunction()
                             .addGetApplicableUastTypes()
@@ -139,6 +141,14 @@ class DetectorProcessor : AbstractProcessor() {
                 .build()
         )
 
+    private fun TypeSpec.Builder.addJavaContextProperty(): TypeSpec.Builder =
+        addProperty(
+            PropertySpec.builder("javaContext", JAVA_CONTEXT_CLASS_NAME)
+                .mutable(true)
+                .addModifiers(KModifier.LATEINIT)
+                .build()
+        )
+
     private fun TypeSpec.Builder.addDidReportFileVisitor(): TypeSpec.Builder =
         addProperty(
             PropertySpec.builder("didReportWithFileVisitor", Boolean::class)
@@ -175,8 +185,9 @@ class DetectorProcessor : AbstractProcessor() {
                 )
                 .addCode(
                     """
-                        |if (!didReportWithFileVisitor && projectVisitor.shouldReport) {
-                        |   context.report(issue)
+                        |val reportedNodes = projectVisitor.reportedNodes
+                        |if (!didReportWithFileVisitor && reportedNodes.isNotEmpty()) {
+                        |   context.report(issue, javaContext.getLocation(reportedNodes.first()), reportedNodes.first())
                         |}
                     """.trimMargin()
                 )
@@ -218,10 +229,12 @@ class DetectorProcessor : AbstractProcessor() {
 
     private fun FunSpec.Builder.addShouldReportFunction(): FunSpec.Builder =
         addCode(
-            """ |val fileVisitor = LinVisitor(detector)
+            """ |javaContext = context
+                |val fileVisitor = LinVisitor(detector)
                 |node.accept(fileVisitor)
-                |if (fileVisitor.shouldReport) {
-                |   context.report(issue)
+                |val reportedNodes = fileVisitor.reportedNodes
+                |if (reportedNodes.isNotEmpty()) {
+                |   context.report(issue, context.getNameLocation(reportedNodes.first()), reportedNodes.first())
                 |   didReportWithFileVisitor = true
                 |}
                 |projectVisitor += fileVisitor

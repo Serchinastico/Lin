@@ -1,5 +1,7 @@
 package com.serchinastico.lin.dsl
 
+import com.serchinastico.lin.dsl.MatchResult.Companion.NoMatch
+import com.serchinastico.lin.dsl.MatchResult.Companion.maybe
 import org.jetbrains.uast.UElement
 import kotlin.reflect.full.isSuperclassOf
 
@@ -17,32 +19,67 @@ data class TreeNode(
 private data class MatchLinContext(
     override val storage: Storage = mutableMapOf(),
     val counterOfQuantifiers: Counters = mapOf()
-) : LinContext
+) : LinContext {
+    fun plus(quantifier: Quantifier): MatchLinContext =
+        copy(counterOfQuantifiers = counterOfQuantifiers.plusOne(quantifier))
+}
+
+private data class MatchResult(
+    val didFoundMatch: Boolean,
+    val elementsMatching: List<UElement>
+) {
+    companion object {
+        val NoMatch: MatchResult = MatchResult(false, emptyList())
+        fun maybe(didMatch: Boolean) = MatchResult(didMatch, emptyList())
+    }
+
+    fun and(block: (MatchResult) -> MatchResult): MatchResult {
+        return if (didFoundMatch) {
+            plus(block(this))
+        } else {
+            this
+        }
+    }
+
+    fun plus(result: MatchResult): MatchResult =
+        copy(
+            didFoundMatch = didFoundMatch && result.didFoundMatch,
+            elementsMatching = elementsMatching.plus(result.elementsMatching)
+        )
+
+    fun plus(element: UElement): MatchResult =
+        copy(elementsMatching = elementsMatching.plus(element))
+}
 
 private typealias Counters = Map<Quantifier, Int>
 
 private fun Counters.getCount(quantifier: Quantifier): Int = this.getOrDefault(quantifier, 0)
 private fun Counters.plusOne(quantifier: Quantifier): Counters = plus(quantifier to getCount(quantifier) + 1)
 
-fun List<LinRule<UElement>>.matchesAny(code: List<TreeNode>): Boolean = this.any { matchesAll(code, listOf(it)) }
+fun List<LinRule<UElement>>.matchesAny(code: List<TreeNode>): List<UElement> =
+    stream()
+        .map { matchesAll(code, listOf(it)) }
+        .filter { it.isNotEmpty() }
+        .findFirst()
+        .orElse(emptyList())
 
-private fun matchesAll(codeNodes: List<TreeNode>, rules: List<LinRule<UElement>>): Boolean =
-    matchesAll(codeNodes, rules, MatchLinContext())
+private fun matchesAll(codeNodes: List<TreeNode>, rules: List<LinRule<UElement>>): List<UElement> =
+    matchesAll(codeNodes, rules, MatchLinContext()).let { if (it.didFoundMatch) it.elementsMatching else emptyList() }
 
 private fun matchesAll(
     codeNodes: List<TreeNode>,
     rules: List<LinRule<UElement>>,
     context: MatchLinContext
-): Boolean {
+): MatchResult {
     // We finished processing rules and found a match, we succeeded as long as quantifiers match their requirements
     if (rules.isEmpty()) {
-        return context.counterOfQuantifiers.allQualifiersMeetRequirements(rules)
+        return maybe(context.counterOfQuantifiers.allQualifiersMeetRequirements(rules))
     }
 
     // We don't have more code and there are still rules, see if there are missing matches
     if (codeNodes.isEmpty()) {
-        return rules.none { it.quantifier == Quantifier.Any } &&
-                context.counterOfQuantifiers.allQualifiersMeetRequirements(rules)
+        return maybe(rules.none { it.quantifier == Quantifier.Any } &&
+                context.counterOfQuantifiers.allQualifiersMeetRequirements(rules))
     }
 
     val headCodeNode = codeNodes.first()
@@ -56,15 +93,22 @@ private fun matchesAll(
         .all { it.isPossibleToContinueMatching(headCodeNode.element, context) }
 
     if (!isPossibleToContinueMatching) {
-        return false
+        return NoMatch
     }
 
-    return applicableRules
+    val result = applicableRules
         .map { it to context.copy() }
         .filter { it.first.matches(headCodeNode.element, it.second) }
-        .any { it.first.matchesChildren(headCodeNode, tailCodeNodes, rules, it.second) }
-            || ((rules.none { it.quantifier == Quantifier.All } &&
-            matchesAll(tailCodeNodes, rules, context.copy())))
+        .stream()
+        .map { it.first.matchesChildren(headCodeNode, tailCodeNodes, rules, it.second) }
+        .findFirst()
+        .orElse(NoMatch)
+
+    return when {
+        result.didFoundMatch -> result.plus(headCodeNode.element)
+        rules.none { it.quantifier == Quantifier.All } -> matchesAll(tailCodeNodes, rules, context.copy())
+        else -> NoMatch
+    }
 }
 
 private fun LinRule<UElement>.matchesChildren(
@@ -72,25 +116,23 @@ private fun LinRule<UElement>.matchesChildren(
     tail: List<TreeNode>,
     rules: List<LinRule<UElement>>,
     context: MatchLinContext
-): Boolean {
+): MatchResult {
     return when (quantifier) {
-        Quantifier.All -> matchesAll(
-            head.children,
-            children,
-            context
-        ) && matchesAll(tail, rules, context)
-        Quantifier.Any -> matchesAll(
-            head.children,
-            children,
-            context
-        ) && matchesAll(tail, rules.minus(this), context)
+        Quantifier.All ->
+            matchesAll(head.children, children, context)
+                .and { matchesAll(tail, rules, context) }
+        Quantifier.Any ->
+            matchesAll(head.children, children, context)
+                .and { matchesAll(tail, rules.minus(this@matchesChildren), context) }
         is Quantifier.Times, is Quantifier.AtLeast, is Quantifier.AtMost ->
-            matchesAll(head.children, children, context) &&
+            matchesAll(head.children, children, context)
+                .and {
                     matchesAll(
                         tail,
                         rules,
                         context.copy(counterOfQuantifiers = context.counterOfQuantifiers.plusOne(quantifier))
                     )
+                }
     }
 }
 

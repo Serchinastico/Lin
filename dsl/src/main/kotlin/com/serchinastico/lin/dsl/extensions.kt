@@ -1,9 +1,6 @@
 package com.serchinastico.lin.dsl
 
-import com.android.tools.lint.detector.api.Context
-import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.detector.api.Location
-import com.android.tools.lint.detector.api.TextFormat
+import com.android.tools.lint.detector.api.*
 import com.intellij.lang.Language
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -16,8 +13,12 @@ import org.jetbrains.uast.kotlin.KotlinUClass
 
 val Any?.exhaustive get() = Unit
 
-fun Context.report(issue: Issue) {
-    report(issue, Location.create(file), issue.getBriefDescription(TextFormat.TEXT))
+fun Context.report(issue: Issue, position: Location, source: UElement) {
+    report(
+        issue,
+        Location.create(file, position.start ?: DefaultPosition(0, 0, 0), position.end).withSource(source),
+        issue.getBriefDescription(TextFormat.TEXT)
+    )
 }
 
 val USwitchExpression.clauses: List<USwitchClauseExpression>
@@ -63,6 +64,15 @@ val UField.isPrivate: Boolean
             }
             else -> return false
         }
+    }
+
+val UField.isOverride: Boolean
+    get() = when {
+        language.isJava -> annotations.any { it.qualifiedName == Override::class.qualifiedName }
+        // The only way to see if a property is overriding in kotlin is to see if it has the same
+        // signature than any ancestor class property. This is a quick correct-in-most-cases fix
+        language.isKotlin -> text.contains("override ")
+        else -> false
     }
 
 val Language.isKotlin: Boolean

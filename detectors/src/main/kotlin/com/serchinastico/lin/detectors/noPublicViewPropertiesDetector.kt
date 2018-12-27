@@ -1,12 +1,8 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
-import com.serchinastico.lin.dsl.detector
-import com.serchinastico.lin.dsl.isClassOrSubclassOf
-import com.serchinastico.lin.dsl.isPrivate
-import com.serchinastico.lin.dsl.issue
+import com.serchinastico.lin.dsl.*
 import org.jetbrains.uast.UField
 
 @Detector
@@ -17,8 +13,7 @@ fun noPublicViewProperties() = detector(
         """Exposing views to other classes, be it from activities or custom views is leaking too much
                 | information to other classes and is prompt to break if the inner implementation of
                 | the layout changes, the only exception is if those views are part of an implemented
-                | interface""".trimMargin(),
-        Category.CORRECTNESS
+                | interface or abstract class""".trimMargin()
     )
 ) {
     field { suchThat { it.isNonPrivateViewField } }
@@ -27,7 +22,8 @@ fun noPublicViewProperties() = detector(
 private inline val UField.isNonPrivateViewField: Boolean
     get() {
         val isPrivateField = isPrivate
+        val isOverrideField = isOverride
         val isViewType = isClassOrSubclassOf("android.view.View")
 
-        return !isPrivateField && isViewType
+        return !isPrivateField && isViewType && !isOverrideField
     }

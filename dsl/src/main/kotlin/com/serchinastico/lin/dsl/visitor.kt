@@ -13,7 +13,7 @@ data class LinVisitor(val detector: LinDetector) : UastVisitor {
     private var root: MutableList<TreeNode> = mutableListOf()
     private var currentNode: TreeNode? = null
 
-    val shouldReport: Boolean
+    val reportedNodes: List<UElement>
         get() {
             return detector.roots.matchesAny(root)
         }

@@ -28,15 +28,14 @@ data class RuleSet(val rules: List<LinRule<*>>) {
 fun issue(
     scope: EnumSet<Scope>,
     description: String,
-    explanation: String,
-    category: Category
-): IssueBuilder = IssueBuilder(scope, description, explanation, category)
+    explanation: String
+): IssueBuilder = IssueBuilder(scope, description, explanation)
 
 data class IssueBuilder(
     val scope: EnumSet<Scope>,
     val description: String,
     val explanation: String,
-    val category: Category,
+    val category: Category = LinCategory,
     var priority: Int = 5,
     var severity: Severity = Severity.ERROR
 ) {

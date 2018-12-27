@@ -1,6 +1,5 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.detector
@@ -13,8 +12,7 @@ fun noPrintStackTraceCalls() = detector(
     issue(
         Scope.JAVA_FILE_SCOPE,
         "There should not be calls to the printStackTrace method in Throwable instances",
-        "Errors should be logged with a configured logger or sent to the backend for faster response",
-        Category.CORRECTNESS
+        "Errors should be logged with a configured logger or sent to the backend for faster response"
     )
 ) {
     callExpression { suchThat { it.isPrintStackTraceCall } }

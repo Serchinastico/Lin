@@ -1,6 +1,5 @@
 package com.serchinastico.lin.detectors
 
-import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Scope
 import com.serchinastico.lin.annotations.Detector
 import com.serchinastico.lin.dsl.*
@@ -12,8 +11,7 @@ fun noElseInSwitchWithEnumOrSealed() = detector(
         Scope.JAVA_FILE_SCOPE,
         "There should not be else/default branches on a switch statement checking for enum/sealed class values",
         """Adding an else/default branch breaks extensibility because it won't let you know if there is a missing
-                | implementation when adding new types to the enum/sealed class""".trimMargin(),
-        Category.CORRECTNESS
+                | implementation when adding new types to the enum/sealed class""".trimMargin()
     )
 ) {
     switchExpression { suchThat { it.hasElseWithEnumOrSealedExpression } }
