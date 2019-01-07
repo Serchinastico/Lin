@@ -5,6 +5,7 @@
 [![Build Status](https://travis-ci.org/Serchinastico/Lin.svg?branch=master)](https://travis-ci.org/Serchinastico/Lin)
 [![codecov](https://codecov.io/gh/Serchinastico/Lin/branch/master/graph/badge.svg)](https://codecov.io/gh/Serchinastico/Lin)
 [![jitpack](https://jitpack.io/v/Serchinastico/Lin.svg)](https://jitpack.io/#Serchinastico/Lin)
+[![Lint tool: Lin](https://img.shields.io/badge/Lint_tool-lin-2e99e9.svg?style=flat)](https://github.com/Serchinastico/Lin)
 
 Lin is an Android Lint tool made simpler. It has two different goals:
 
@@ -194,3 +195,14 @@ It's also important to keep in mind that Lin will try to match rules in any orde
 ```
 
 Even if the expression storing things in the storage is defined before, that order is not honored when looking for the best match of rules, so it might happen that `storage["node"]` is null.
+
+### Badge
+
+Show the world you're using Lin.
+
+[![Lint tool: Lin](https://img.shields.io/badge/Lint_tool-lin-2e99e9.svg?style=flat)](https://github.com/Serchinastico/Lin)
+
+```md
+[![Lint tool: Lin](https://img.shields.io/badge/Lint_tool-lin-2e99e9.svg?style=flat)](https://github.com/Serchinastico/Lin)
+```
+
