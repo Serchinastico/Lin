@@ -1,8 +1,8 @@
 package com.serchinastico.lin.detectors
 
-import com.serchinastico.lin.detectors.test.LintTest
-import com.serchinastico.lin.detectors.test.LintTest.Expectation.NoErrors
-import com.serchinastico.lin.detectors.test.LintTest.Expectation.SomeError
+import com.serchinastico.lin.test.LintTest
+import com.serchinastico.lin.test.LintTest.Expectation.NoErrors
+import com.serchinastico.lin.test.LintTest.Expectation.SomeError
 import org.junit.Test
 
 class NoMoreThanOneDateInstanceDetectorTest : LintTest {

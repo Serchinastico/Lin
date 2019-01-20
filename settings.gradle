@@ -1,1 +1,1 @@
-include ':app', ':dsl', ':detectors', ':annotations', ':processor'
+include ':app', ':dsl', ':detectors', ':annotations', ':processor', ':test'

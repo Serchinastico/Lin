@@ -1,0 +1,9 @@
+apply plugin: 'kotlin'
+
+dependencies {
+    implementation 'com.android.tools.lint:lint:26.3.0'
+    implementation 'com.android.tools.lint:lint-api:26.3.0'
+    implementation 'com.android.tools.lint:lint-checks:26.3.0'
+    implementation 'com.android.tools.lint:lint-tests:26.3.0'
+    implementation 'com.android.tools:testutils:26.3.0'
+}

@@ -1,10 +1,9 @@
-package com.serchinastico.lin.detectors.test
+package com.serchinastico.lin.test
 
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.detector.api.Issue
-import com.serchinastico.lin.dsl.exhaustive
 
 interface LintTest {
 
@@ -51,3 +50,5 @@ interface LintTest {
         data class SomeError(val fileName: String) : Expectation()
     }
 }
+
+private val Any?.exhaustive get() = Unit
