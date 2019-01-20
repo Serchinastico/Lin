@@ -18,6 +18,15 @@ class NoFindViewByIdCallsDetectorTest : LintTest {
             |   }
             |}
         """.inJava
+    private val androidResourcesFile = """
+            |package android;
+            |
+            |public final class R {
+            |   public static final class id {
+            |       public static final int content=0x7f010000;
+            |   }
+            |}
+        """.inJava
 
 
     @Test
@@ -60,6 +69,27 @@ class NoFindViewByIdCallsDetectorTest : LintTest {
                 |}
             """.inJava
         ) toHave SomeError("src/foo/TestClass.java")
+    }
+
+    @Test
+    fun inJavaClass_whenCallIsFindViewByIdToAndroidContent_detectsNoError() {
+        expect(
+            androidResourcesFile,
+            resourcesFile,
+            """
+                |package foo;
+                |
+                |import android.view.View;
+                |
+                |class TestClass {
+                |   private View view;
+                |
+                |   public void main(String[] args) {
+                |       view.findViewById(android.R.id.content);
+                |   }
+                |}
+            """.inJava
+        ) toHave NoErrors
     }
 
     @Test
@@ -122,6 +152,27 @@ class NoFindViewByIdCallsDetectorTest : LintTest {
                 |}
             """.inKotlin
         ) toHave SomeError("src/foo/TestClass.kt")
+    }
+
+    @Test
+    fun inKotlinClass_whenCallIsFindViewByIdToAndroidContent_detectsNoError() {
+        expect(
+            androidResourcesFile,
+            resourcesFile,
+            """
+                |package foo
+                |
+                |import android.view.View
+                |
+                |class TestClass {
+                |   private lateinit var view: View
+                |
+                |   public fun main(args: Array<String>) {
+                |       view.findViewById(android.R.id.content)
+                |   }
+                |}
+            """.inKotlin
+        ) toHave NoErrors
     }
 
     @Test

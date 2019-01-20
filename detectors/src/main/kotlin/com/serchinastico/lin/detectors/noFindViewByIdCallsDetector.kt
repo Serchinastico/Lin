@@ -27,6 +27,7 @@ private inline val UCallExpression.isFindViewByIdCall: Boolean
         val isReceiverChildOfActivityOrView =
             receiverType.isClassOrSubclassOf("android.app.Activity", "android.view.View")
         val isMethodFindViewById = methodIdentifier?.name == "findViewById"
+        val isNotAndroidContentId = valueArguments.firstOrNull()?.asSourceString() == "android.R.id.content"
 
-        return isReceiverChildOfActivityOrView && isMethodFindViewById
+        return isReceiverChildOfActivityOrView && isMethodFindViewById && !isNotAndroidContentId
     }
