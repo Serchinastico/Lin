@@ -31,8 +31,8 @@ Add the `detectors` module dependencies to your project and the `dsl` module as 
 
 ```groovy
 dependencies {
-    lintChecks 'com.github.serchinastico.lin:detectors:0.0.3'
-    lintClassPath 'com.github.serchinastico.lin:dsl:0.0.3'
+    lintChecks 'com.github.serchinastico.lin:detectors:0.0.4'
+    lintClassPath 'com.github.serchinastico.lin:dsl:0.0.4'
 }
 ```
 
@@ -42,8 +42,8 @@ If you want to write your own detectors just add the `dsl` and `annotations` mod
 
 ```groovy
 dependencies {
-    compileOnly 'com.github.serchinastico.lin:dsl:0.0.3'
-    compileOnly 'com.github.serchinastico.lin:annotations:0.0.3'
+    compileOnly 'com.github.serchinastico.lin:dsl:0.0.4'
+    compileOnly 'com.github.serchinastico.lin:annotations:0.0.4'
 }
 ```
 
@@ -202,7 +202,7 @@ Internally, Lin uses a DSL for tests that makes a bit easier the simplest scenar
 
 ```groovy
 dependencies {
-    testCompile 'com.github.serchinastico.lin:test:0.0.3'
+    testCompile 'com.github.serchinastico.lin:test:0.0.4'
     // You might still need to load the official Android Lint dependencies for tests
     testCompile 'com.android.tools.lint:lint:26.3.0'
     testCompile 'com.android.tools.lint:lint-tests:26.3.0'
