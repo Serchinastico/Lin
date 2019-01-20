@@ -196,6 +196,52 @@ It's also important to keep in mind that Lin will try to match rules in any orde
 
 Even if the expression storing things in the storage is defined before, that order is not honored when looking for the best match of rules, so it might happen that `storage["node"]` is null.
 
+### Lin - Testing
+
+Internally, Lin uses a DSL for tests that makes a bit easier the simplest scenarios. You can use it by adding the dependency to your project:
+
+```groovy
+dependencies {
+    testCompile 'com.github.serchinastico.lin:test:0.0.3'
+    // You might still need to load the official Android Lint dependencies for tests
+    testCompile 'com.android.tools.lint:lint:26.3.0'
+    testCompile 'com.android.tools.lint:lint-tests:26.3.0'
+    testCompile 'com.android.tools:testutils:26.3.0'
+}
+```
+
+Creating a test with the `test` module is pretty easy, just look at an example:
+
+```kotlin
+class SomeDetectorTest : LintTest {
+    // Specify the issue we are covering, in this case an issue created with Lin
+    override val issue = SomeDetector.issue
+    
+    @Test
+    fun inJavaClass_whenSomethingHappens_detectsNoErrors() {
+        // `expect` can load multiple files to the test project
+        expect(
+            someSharedFile,
+            """
+                |package foo;
+                |
+                |import java.util.Date;
+                |
+                |class TestClass {
+                |   public void main(String[] args) {}
+                |}
+            """.inJava    // Specify the language in which the file is written e.g. `inJava` or `inKotlin`
+        ) toHave NoErrors /* Three possible values here:
+                           *   > `NoErrors`               No expected reports
+                           *   > `SomeWarning(fileName)`  Expect at least one warning in the specified file
+                           *   > `SomeError(fileName)`    Expect at least one error in the specified file
+                           */
+    }
+}
+```
+
+Lin tests are used with this very same DSL so you can take a look to the `detectors` module tests to see many more examples.
+
 ### Badge
 
 Show the world you're using Lin.
