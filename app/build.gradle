@@ -20,13 +20,8 @@ android {
     }
 }
 
-configurations {
-    lintChecks
-}
-
 dependencies {
-    lintChecks project(path: ":detectors", configuration: "lintChecks")
-//    lintChecks project(':detectors')
+    lintChecks project(':detectors')
     lintClassPath project(":dsl")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.11"
@@ -34,19 +29,4 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-}
-
-task copyLintJar(type: Copy){
-    from (configurations.lintChecks) {
-        rename {
-            String fileName ->
-                'lint.jar'
-        }
-    }
-    into 'build/intermediates/lint/'
-}
-
-project.afterEvaluate{
-    def compileLintTask = project.tasks.find {it.name == 'compileLint'}
-    compileLintTask.dependsOn(copyLintJar)
 }
