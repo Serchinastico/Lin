@@ -10,6 +10,10 @@ sourceSets {
     }
 }
 
+configurations {
+    lintChecks
+}
+
 dependencies {
     compileOnly project(":dsl")
     compileOnly project(":annotations")
@@ -27,6 +31,8 @@ dependencies {
     testCompile 'com.android.tools.lint:lint:26.3.0'
     testCompile 'com.android.tools.lint:lint-tests:26.3.0'
     testCompile 'com.android.tools:testutils:26.3.0'
+
+    lintChecks files(jar)
 }
 
 test.finalizedBy jacocoTestReport
