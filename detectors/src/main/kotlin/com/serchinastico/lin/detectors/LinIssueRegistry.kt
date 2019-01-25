@@ -14,11 +14,13 @@ class LinIssueRegistry : IssueRegistry() {
     override val issues: List<Issue> = listOf(
         NoDataFrameworksFromAndroidClassDetector.issue,
         NoElseInSwitchWithEnumOrSealedDetector.issue,
+        NoFindViewByIdCallsDetector.issue,
+        NoMoreThanOneDateInstanceDetector.issue,
+        NoMoreThanOneGsonInstanceDetector.issue,
         NoPrintStackTraceCallsDetector.issue,
         NoPublicViewPropertiesDetector.issue,
         NoSetOnClickListenerCallsDetector.issue,
-        NoMoreThanOneGsonInstanceDetector.issue,
-        NoMoreThanOneDateInstanceDetector.issue,
-        OnlyConstantsInTypeOrFileDetector.issue
+        OnlyConstantsInTypeOrFileDetector.issue,
+        WrongSyntheticViewReferenceDetector.issue
     )
 }
