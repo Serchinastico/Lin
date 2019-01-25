@@ -20,12 +20,8 @@ android {
     }
 }
 
-configurations {
-    lintChecks
-}
-
 dependencies {
-    lintChecks project(configuration: 'lintChecks', path: ':detectors')
+    lintChecks project(':detectors')
     lintClassPath project(":dsl")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.11"
