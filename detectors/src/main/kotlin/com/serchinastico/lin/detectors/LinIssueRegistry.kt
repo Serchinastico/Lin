@@ -9,7 +9,7 @@ class LinIssueRegistry : IssueRegistry() {
         get() = CURRENT_API
 
     override val minApi: Int
-        get() = -1
+        get() = CURRENT_API
 
     override val issues: List<Issue> = listOf(
         NoDataFrameworksFromAndroidClassDetector.issue,
