@@ -5,13 +5,15 @@ apply plugin: 'kotlin-kapt'
 sourceSets {
     main {
         java {
-            srcDirs = ["src/main/kotlin", "${buildDir.absolutePath}/generated/source/kapt/main/"]
+            srcDirs = [
+                    "src/main/kotlin",
+                    "${buildDir.absolutePath}/generated/source/kapt/main/",
+                    "../dsl/src/main/kotlin"]
         }
     }
 }
 
 dependencies {
-    compileOnly project(":dsl")
     compileOnly project(":annotations")
     kapt project(":processor")
 
