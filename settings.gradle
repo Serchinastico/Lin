@@ -1,1 +1,1 @@
-include ':app', ':dsl', ':detectors', ':annotations', ':processor', ':test'
+include ':app', ':dsl', ':detectors', ':annotations', ':processor', ':test', ':hacklib', ':androidhacklib'
