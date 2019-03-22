@@ -31,7 +31,7 @@ Add the `detectors` module dependencies to your project and the `dsl` module as 
 
 ```groovy
 dependencies {
-    lintChecks 'com.github.serchinastico.lin:detectors:0.0.4'
+    lintChecks 'com.github.serchinastico.lin:detectors:0.0.6'
 }
 ```
 
@@ -41,9 +41,9 @@ If you want to write your own detectors with Lin just add the `dsl`, `annotation
 
 ```groovy
 dependencies {
-    compileOnly 'com.github.serchinastico.lin:dsl:0.0.4'
-    compileOnly 'com.github.serchinastico.lin:annotations:0.0.4'
-    kapt 'com.github.serchinastico.lin:processor:0.0.4'
+    compileOnly 'com.github.serchinastico.lin:dsl:0.0.6'
+    compileOnly 'com.github.serchinastico.lin:annotations:0.0.6'
+    kapt 'com.github.serchinastico.lin:processor:0.0.6'
 }
 ```
 
@@ -220,11 +220,11 @@ Internally, Lin uses a DSL for tests that makes a bit easier the simplest scenar
 
 ```groovy
 dependencies {
-    testCompile 'com.github.serchinastico.lin:test:0.0.4'
+    testImplementation 'com.github.serchinastico.lin:test:0.0.6'
     // You might still need to load the official Android Lint dependencies for tests
-    testCompile 'com.android.tools.lint:lint:26.3.0'
-    testCompile 'com.android.tools.lint:lint-tests:26.3.0'
-    testCompile 'com.android.tools:testutils:26.3.0'
+    testImplementation 'com.android.tools.lint:lint:26.3.0'
+    testImplementation 'com.android.tools.lint:lint-tests:26.3.0'
+    testImplementation 'com.android.tools:testutils:26.3.0'
 }
 ```
 
@@ -234,7 +234,7 @@ Creating a test with the `test` module is pretty easy, just look at an example:
 class SomeDetectorTest : LintTest {
     // Specify the issue we are covering, in this case an issue created with Lin
     override val issue = SomeDetector.issue
-    
+
     @Test
     fun inJavaClass_whenSomethingHappens_detectsNoErrors() {
         // `expect` can load multiple files to the test project
@@ -269,4 +269,3 @@ Show the world you're using Lin.
 ```md
 [![Lint tool: Lin](https://img.shields.io/badge/Lint_tool-lin-2e99e9.svg?style=flat)](https://github.com/Serchinastico/Lin)
 ```
-
