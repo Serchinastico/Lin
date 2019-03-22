@@ -7,13 +7,13 @@ sourceSets {
         java {
             srcDirs = [
                     "src/main/kotlin",
-                    "${buildDir.absolutePath}/generated/source/kapt/main/",
-                    "../dsl/src/main/kotlin"]
+                    "${buildDir.absolutePath}/generated/source/kapt/main/"]
         }
     }
 }
 
 dependencies {
+    compileOnly project(":dsl")
     compileOnly project(":annotations")
     kapt project(":processor")
 
