@@ -32,18 +32,36 @@ Add the `detectors` module dependencies to your project and the `dsl` module as 
 ```groovy
 dependencies {
     lintChecks 'com.github.serchinastico.lin:detectors:0.0.4'
-    lintClassPath 'com.github.serchinastico.lin:dsl:0.0.4'
 }
 ```
 
 ### Lin - DSL (Domain Specific Language)
 
-If you want to write your own detectors just add the `dsl` and `annotations` modules to your linting project:
+If you want to write your own detectors with Lin just add the `dsl`, `annotations` and `processor` modules to your linting project:
 
 ```groovy
 dependencies {
     compileOnly 'com.github.serchinastico.lin:dsl:0.0.4'
     compileOnly 'com.github.serchinastico.lin:annotations:0.0.4'
+    kapt 'com.github.serchinastico.lin:processor:0.0.4'
+}
+```
+
+You will also need to export classes defined in the `dsl` dependency into your linting module. To do so, pack the `dsl` files inside the jar along with the definition of your `Lint-Registry-v2` file:
+
+```groovy
+jar {
+  manifest {
+    attributes("Lint-Registry-v2": "com.your.project.IssueRegistry")
+  }
+
+  from {
+    configurations.compileOnly.filter {
+      it.absolutePath.contains("com.github.serchinastico.lin/dsl")
+    }.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  }
 }
 ```
 

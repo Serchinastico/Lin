@@ -5,13 +5,11 @@ apply plugin: 'kotlin-kapt'
 sourceSets {
     main {
         java {
-            srcDirs = ["src/main/kotlin", "${buildDir.absolutePath}/generated/source/kapt/main/"]
+            srcDirs = [
+                    "src/main/kotlin",
+                    "${buildDir.absolutePath}/generated/source/kapt/main/"]
         }
     }
-}
-
-configurations {
-    lintChecks
 }
 
 dependencies {
@@ -19,20 +17,18 @@ dependencies {
     compileOnly project(":annotations")
     kapt project(":processor")
 
-    compileOnly 'com.android.tools.lint:lint:26.3.0'
-    compileOnly 'com.android.tools.lint:lint-api:26.3.0'
-    compileOnly 'com.android.tools.lint:lint-checks:26.3.0'
+    compileOnly 'com.android.tools.lint:lint:26.3.2'
+    compileOnly 'com.android.tools.lint:lint-api:26.3.2'
+    compileOnly 'com.android.tools.lint:lint-checks:26.3.2'
 
-    testCompile project(":dsl")
-    testCompile project(":test")
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.assertj:assertj-core:3.3.0'
-    testCompile 'org.mockito:mockito-core:2.23.0'
-    testCompile 'com.android.tools.lint:lint:26.3.0'
-    testCompile 'com.android.tools.lint:lint-tests:26.3.0'
-    testCompile 'com.android.tools:testutils:26.3.0'
-
-    lintChecks files(jar)
+    testImplementation project(":dsl")
+    testImplementation project(":test")
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.assertj:assertj-core:3.3.0'
+    testImplementation 'org.mockito:mockito-core:2.23.4'
+    testImplementation 'com.android.tools.lint:lint:26.3.2'
+    testImplementation 'com.android.tools.lint:lint-tests:26.3.2'
+    testImplementation 'com.android.tools:testutils:26.3.2'
 }
 
 test.finalizedBy jacocoTestReport
